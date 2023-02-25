@@ -34,7 +34,7 @@
 #include "debug_utils.h"
 #include "get_environment.h"
 
-uint32_t g_loader_debug = 0;
+uint32_t g_loader_debug = ~0u;
 
 void loader_debug_init(void) {
     char *env, *orig;

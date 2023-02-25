@@ -266,6 +266,10 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
 #ifdef VK_USE_PLATFORM_FUCHSIA
     LOOKUP_GIPA(CreateImagePipeSurfaceFUCHSIA, false);
 #endif // VK_USE_PLATFORM_FUCHSIA
+    // ---- VK_OpenHarmony_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    LOOKUP_GIPA(CreateOHOSSurfaceOpenHarmony, false);
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -1310,6 +1314,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
     table->CreateImagePipeSurfaceFUCHSIA = (PFN_vkCreateImagePipeSurfaceFUCHSIA)gpa(inst, "vkCreateImagePipeSurfaceFUCHSIA");
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+    // ---- VK_OpenHarmony_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->CreateOHOSSurfaceOpenHarmony = (PFN_vkCreateOHOSSurfaceOpenHarmony)gpa(inst, "vkCreateOHOSSurfaceOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
     table->CreateMetalSurfaceEXT = (PFN_vkCreateMetalSurfaceEXT)gpa(inst, "vkCreateMetalSurfaceEXT");
@@ -2338,6 +2347,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 #ifdef VK_USE_PLATFORM_FUCHSIA
     if (!strcmp(name, "CreateImagePipeSurfaceFUCHSIA")) return (void *)table->CreateImagePipeSurfaceFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
+
+    // ---- VK_OpenHarmony_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    if (!strcmp(name, "CreateOHOSSurfaceOpenHarmony")) return (void *)table->CreateOHOSSurfaceOpenHarmony;
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -9790,6 +9804,11 @@ const VkLayerInstanceDispatchTable instance_disp = {
     .CreateImagePipeSurfaceFUCHSIA = terminator_CreateImagePipeSurfaceFUCHSIA,
 #endif // VK_USE_PLATFORM_FUCHSIA
 
+    // ---- VK_OpenHarmony_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    .CreateOHOSSurfaceOpenHarmony = terminator_CreateOHOSSurfaceOpenHarmony,
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
     .CreateMetalSurfaceEXT = terminator_CreateMetalSurfaceEXT,
@@ -9897,6 +9916,9 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #ifdef VK_USE_PLATFORM_FUCHSIA
                                                   VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+                                                  VK_OPENHARMONY_OHOS_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 #ifdef VK_USE_PLATFORM_METAL_EXT
                                                   VK_EXT_METAL_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_METAL_EXT
