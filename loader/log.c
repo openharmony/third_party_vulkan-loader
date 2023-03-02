@@ -33,6 +33,9 @@
 
 #include "debug_utils.h"
 #include "get_environment.h"
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+#include "loader_hilog.h"
+#endif
 
 uint32_t g_loader_debug = ~0u;
 
@@ -219,6 +222,10 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
 #if defined(WIN32)
         OutputDebugString(cmd_line_msg);
         OutputDebugString("\n");
+#endif
+
+#if defined(VK_USE_PLATFORM_OHOS_OPENHARMONY)
+    OpenHarmonyLog(msg_type, cmd_line_msg);
 #endif
 
         fputs(cmd_line_msg, stderr);
