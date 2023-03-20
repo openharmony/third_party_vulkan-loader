@@ -114,6 +114,11 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkCreateAndroidSurfaceKHR CreateAndroidSurfaceKHR;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
+    // ---- VK_OpenHarmony_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    PFN_vkCreateOHOSSurfaceOpenHarmony CreateOHOSSurfaceOpenHarmony;
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
     // ---- VK_KHR_win32_surface extension commands
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkCreateWin32SurfaceKHR CreateWin32SurfaceKHR;
