@@ -404,7 +404,21 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetRayTracingPipelineStackSizeKHR(VkCom
 static VKAPI_ATTR void VKAPI_CALL StubCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {  }
-
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetSwapchainGrallocUsageOpenHarmony(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage, uint64_t* grallocUsage) { return VK_SUCCESS; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+static VKAPI_ATTR VkResult VKAPI_CALL StubSetNativeFenceFdOpenHarmony(VkDevice device, int32_t nativeFenceFd, VkSemaphore semaphore, VkFence fence) { return VK_SUCCESS; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetNativeFenceFdOpenHarmony( VkQueue queue, uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd) { return VK_SUCCESS; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetOHOSNativeBufferPropertiesOpenHarmony( VkDevice device, const struct OH_NativeBuffer* buffer, VkOHOSNativeBufferPropertiesOpenHarmony* pProperties) { return VK_SUCCESS; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryOHOSNativeBufferOpenHarmony( VkDevice device, const VkMemoryGetOHOSNativeBufferInfoOpenHarmony* pInfo, struct OH_NativeBuffer** pBuffer) { return VK_SUCCESS; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 
 
 static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable *table, PFN_vkGetDeviceProcAddr gpa) {
@@ -1288,6 +1302,26 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CmdDrawMeshTasksIndirectEXT == nullptr) { table->CmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)StubCmdDrawMeshTasksIndirectEXT; }
     table->CmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT) gpa(device, "vkCmdDrawMeshTasksIndirectCountEXT");
     if (table->CmdDrawMeshTasksIndirectCountEXT == nullptr) { table->CmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)StubCmdDrawMeshTasksIndirectCountEXT; }
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetSwapchainGrallocUsageOpenHarmony = (PFN_vkGetSwapchainGrallocUsageOpenHarmony) gpa(device, "vkGetSwapchainGrallocUsageOpenHarmony");
+    if (table->GetSwapchainGrallocUsageOpenHarmony == nullptr) { table->GetSwapchainGrallocUsageOpenHarmony = (PFN_vkGetSwapchainGrallocUsageOpenHarmony)StubGetSwapchainGrallocUsageOpenHarmony; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->SetNativeFenceFdOpenHarmony = (PFN_vkSetNativeFenceFdOpenHarmony) gpa(device, "vkSetNativeFenceFdOpenHarmony");
+    if (table->SetNativeFenceFdOpenHarmony == nullptr) { table->SetNativeFenceFdOpenHarmony = (PFN_vkSetNativeFenceFdOpenHarmony)StubSetNativeFenceFdOpenHarmony; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetNativeFenceFdOpenHarmony = (PFN_vkGetNativeFenceFdOpenHarmony) gpa(device, "vkGetNativeFenceFdOpenHarmony");
+    if (table->GetNativeFenceFdOpenHarmony == nullptr) { table->GetNativeFenceFdOpenHarmony = (PFN_vkGetNativeFenceFdOpenHarmony)StubGetNativeFenceFdOpenHarmony; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetOHOSNativeBufferPropertiesOpenHarmony = (PFN_vkGetOHOSNativeBufferPropertiesOpenHarmony) gpa(device, "vkGetOHOSNativeBufferPropertiesOpenHarmony");
+    if (table->GetOHOSNativeBufferPropertiesOpenHarmony == nullptr) { table->GetOHOSNativeBufferPropertiesOpenHarmony = (PFN_vkGetOHOSNativeBufferPropertiesOpenHarmony)StubGetOHOSNativeBufferPropertiesOpenHarmony; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetMemoryOHOSNativeBufferOpenHarmony = (PFN_vkGetMemoryOHOSNativeBufferOpenHarmony) gpa(device, "vkGetMemoryOHOSNativeBufferOpenHarmony");
+    if (table->GetMemoryOHOSNativeBufferOpenHarmony == nullptr) { table->GetMemoryOHOSNativeBufferOpenHarmony = (PFN_vkGetMemoryOHOSNativeBufferOpenHarmony)StubGetMemoryOHOSNativeBufferOpenHarmony; }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 }
 
 
@@ -1448,4 +1482,7 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     table->GetPhysicalDeviceScreenPresentationSupportQNX = (PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX) gpa(instance, "vkGetPhysicalDeviceScreenPresentationSupportQNX");
 #endif // VK_USE_PLATFORM_SCREEN_QNX
     table->GetPhysicalDeviceOpticalFlowImageFormatsNV = (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV) gpa(instance, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV");
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->CreateOHOSSurfaceOpenHarmony = (PFN_vkCreateOHOSSurfaceOpenHarmony) gpa(instance, "vkCreateOHOSSurfaceOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 }
