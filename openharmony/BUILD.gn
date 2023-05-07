@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 
 vulkan_headers_dir = "//third_party/vulkan-headers"
+
 # Vulkan loader build options
 
 ## Build libvulkan.so {{{
@@ -66,24 +67,24 @@ ohos_shared_library("vulkan_loader") {
     "../loader/dev_ext_trampoline.c",
     "../loader/extension_manual.c",
     "../loader/extension_manual.h",
-    "../loader/get_environment.c",
-    "../loader/get_environment.h",
     "../loader/generated/vk_layer_dispatch_table.h",
     "../loader/generated/vk_loader_extensions.h",
     "../loader/generated/vk_object_types.h",
-    "../loader/gpa_helper.h",
+    "../loader/get_environment.c",
+    "../loader/get_environment.h",
     "../loader/gpa_helper.c",
-    "../loader/loader_common.h",
+    "../loader/gpa_helper.h",
     "../loader/loader.c",
     "../loader/loader.h",
+    "../loader/loader_common.h",
     "../loader/log.c",
     "../loader/log.h",
     "../loader/phys_dev_ext.c",
     "../loader/stack_allocation.h",
     "../loader/terminator.c",
     "../loader/trampoline.c",
-    "../loader/unknown_function_handling.h",
     "../loader/unknown_function_handling.c",
+    "../loader/unknown_function_handling.h",
     "../loader/vk_loader_layer.h",
 
     # TODO(jmadill): Use assembler where available.
@@ -99,10 +100,9 @@ ohos_shared_library("vulkan_loader") {
   external_deps = [ "hilog_native:libhilog" ]
 
   output_name = "vulkan"
-  output_extension = "so.1"
+  output_extension = "so"
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
 }
-
 ## Build libvulkan.so }}}
