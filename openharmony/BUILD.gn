@@ -47,6 +47,7 @@ config("vulkan_loader_config") {
     "../loader/generated",
     "../loader",
     "../openharmony",
+    "//drivers/peripheral/base",
   ]
   defines = [
     "API_NAME=\"Vulkan\"",

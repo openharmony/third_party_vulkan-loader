@@ -1113,6 +1113,24 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)gdpa(dev, "vkCmdDrawMeshTasksEXT");
     table->CmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)gdpa(dev, "vkCmdDrawMeshTasksIndirectEXT");
     table->CmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)gdpa(dev, "vkCmdDrawMeshTasksIndirectCountEXT");
+        // ---- VK_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetSwapchainGrallocUsageOpenHarmony = (PFN_vkGetSwapchainGrallocUsageOpenHarmony)gdpa(dev, "vkGetSwapchainGrallocUsageOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->SetNativeFenceFdOpenHarmony = (PFN_vkSetNativeFenceFdOpenHarmony)gdpa(dev, "vkSetNativeFenceFdOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetNativeFenceFdOpenHarmony = (PFN_vkGetNativeFenceFdOpenHarmony)gdpa(dev, "vkGetNativeFenceFdOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
+    // ---- VK_OpenHarmony_external_memory_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetOHOSNativeBufferPropertiesOpenHarmony = (PFN_vkGetOHOSNativeBufferPropertiesOpenHarmony)gdpa(dev, "vkGetOHOSNativeBufferPropertiesOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    table->GetMemoryOHOSNativeBufferOpenHarmony = (PFN_vkGetMemoryOHOSNativeBufferOpenHarmony)gdpa(dev, "vkGetMemoryOHOSNativeBufferOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 }
 
 // Init Instance function pointer dispatch table with core commands
@@ -7788,6 +7806,94 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(
     disp->CmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
 
+// ---- VK_OHOS_native_buffer extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+VKAPI_ATTR VkResult GetSwapchainGrallocUsageOpenHarmony(
+    VkDevice                          device,
+    VkFormat                          format,
+    VkImageUsageFlags                 imageUsage,
+    uint64_t*                         grallocUsage) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetSwapchainGrallocUsageOpenHarmony: Invalid device "
+                   "[VUID-vkGetSwapchainGrallocUsageOpenHarmony-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetSwapchainGrallocUsageOpenHarmony(device, format, imageUsage, grallocUsage);
+}
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+VKAPI_ATTR VkResult SetNativeFenceFdOpenHarmony(
+    VkDevice                          device,
+    int32_t                           nativeFenceFd,
+    VkSemaphore                       semaphore,
+    VkFence                           fence) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkSetNativeFenceFdOpenHarmony: Invalid device "
+                   "[VUID-vkSetNativeFenceFdOpenHarmony-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->SetNativeFenceFdOpenHarmony(device, nativeFenceFd, semaphore, fence);
+}
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+VKAPI_ATTR VkResult GetNativeFenceFdOpenHarmony(
+    VkQueue                           queue,
+    uint32_t                          waitSemaphoreCount,
+    const VkSemaphore*                pWaitSemaphores,
+    VkImage                           image,
+    int32_t*                          pNativeFenceFd) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetNativeFenceFdOpenHarmony: Invalid queue "
+                   "[VUID-vkGetNativeFenceFdOpenHarmony-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetNativeFenceFdOpenHarmony(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
+}
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
+// ---- VK_OpenHarmony_external_memory_OHOS_native_buffer extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+VKAPI_ATTR VkResult GetOHOSNativeBufferPropertiesOpenHarmony(
+    VkDevice                                    device,
+    const struct OH_NativeBuffer*               buffer,
+    VkOHOSNativeBufferPropertiesOpenHarmony*    pProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetOHOSNativeBufferPropertiesOpenHarmony: Invalid device "
+                   "[VUID-vkGetOHOSNativeBufferPropertiesOpenHarmony-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetOHOSNativeBufferPropertiesOpenHarmony(device, buffer, pProperties);
+}
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+VKAPI_ATTR VkResult GetMemoryOHOSNativeBufferOpenHarmony(
+    VkDevice                                          device,
+    const VkMemoryGetOHOSNativeBufferInfoOpenHarmony* pInfo,
+    struct OH_NativeBuffer**                          pBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetMemoryOHOSNativeBufferOpenHarmony: Invalid device "
+                   "[VUID-vkGetMemoryOHOSNativeBufferOpenHarmony-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetMemoryOHOSNativeBufferOpenHarmony(device, pInfo, pBuffer);
+}
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
 // GPA helpers for extensions
 bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr) {
     *addr = NULL;
@@ -9490,6 +9596,40 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)CmdDrawMeshTasksIndirectCountEXT;
         return true;
     }
+
+    // ---- VK_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    if (!strcmp("vkGetSwapchainGrallocUsageOpenHarmony", name)) {
+        *addr = (void *)GetSwapchainGrallocUsageOpenHarmony;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    if (!strcmp("vkSetNativeFenceFdOpenHarmony", name)) {
+        *addr = (void *)SetNativeFenceFdOpenHarmony;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    if (!strcmp("vkGetNativeFenceFdOpenHarmony", name)) {
+        *addr = (void *)GetNativeFenceFdOpenHarmony;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
+    // ---- VK_OpenHarmony_external_memory_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    if (!strcmp("vkGetOHOSNativeBufferPropertiesOpenHarmony", name)) {
+        *addr = (void *)GetOHOSNativeBufferPropertiesOpenHarmony;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+    if (!strcmp("vkGetMemoryOHOSNativeBufferOpenHarmony", name)) {
+        *addr = (void *)GetMemoryOHOSNativeBufferOpenHarmony;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
     return false;
 }
 
