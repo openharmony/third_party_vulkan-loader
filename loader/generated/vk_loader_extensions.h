@@ -419,11 +419,6 @@ struct loader_icd_term_dispatch {
     PFN_vkCreateImagePipeSurfaceFUCHSIA CreateImagePipeSurfaceFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
 
-    // ---- VK_OpenHarmony_OHOS_surface extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    PFN_vkCreateOHOSSurfaceOpenHarmony CreateOHOSSurfaceOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
     PFN_vkCreateMetalSurfaceEXT CreateMetalSurfaceEXT;
@@ -479,6 +474,11 @@ struct loader_icd_term_dispatch {
 
     // ---- VK_NV_optical_flow extension commands
     PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
+
+    // ---- VK_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
+#endif // VK_USE_PLATFORM_OHOS
 };
 
 struct loader_instance_extension_enables {

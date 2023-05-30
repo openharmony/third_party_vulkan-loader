@@ -5266,6 +5266,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
                 NULL != icd_term->dispatch.CreateAndroidSurfaceKHR ||
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_OHOS
+                NULL != icd_term->dispatch.CreateSurfaceOHOS ||
+#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_WIN32_KHR
                 NULL != icd_term->dispatch.CreateWin32SurfaceKHR ||
 #endif  // VK_USE_PLATFORM_WIN32_KHR

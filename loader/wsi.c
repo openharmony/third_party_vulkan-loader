@@ -80,12 +80,12 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
             continue;
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_OPENHARMONY_OHOS_SURFACE_EXTENSION_NAME) == 0) {
-            loader_inst->wsi_openharmony_surface_enabled = true;
+#ifdef VK_USE_PLATFORM_OHOS
+        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_OHOS_SURFACE_EXTENSION_NAME) == 0) {
+            loader_inst->wsi_ohos_surface_enabled = true;
             continue;
         }
-#endif  // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_MACOS_MVK
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_MVK_MACOS_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_macos_surface_enabled = true;
@@ -1217,47 +1217,47 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS
 
-// Functions for the VK_OpenHarmony_OHOS_surface extension:
+// Functions for the VK_OHOS_surface extension:
 
-// This is the trampoline entrypoint for CreateOHOSSurfaceOpenHarmony
+// This is the trampoline entrypoint for CreateSurfaceOHOS
 
-LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateOHOSSurfaceOpenHarmony(VkInstance instance,
-                                                                            const VkOHOSSurfaceCreateInfoOpenHarmony *pCreateInfo,
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSurfaceOHOS(VkInstance instance,
+                                                                            const VkSurfaceCreateInfoOHOS *pCreateInfo,
                                                                             const VkAllocationCallbacks *pAllocator,
                                                                             VkSurfaceKHR *pSurface) {
     const VkLayerInstanceDispatchTable *disp;
     if (NULL == loader_get_instance(instance)) {
         loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "VkOHOSSurfaceCreateInfoOpenHarmony: Invalid instance [VUID-VkOHOSSurfaceCreateInfoOpenHarmony-instance-parameter]");
+                   "vkCreateSurfaceOHOS: Invalid instance [VUID-vkCreateSurfaceOHOS-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(instance);
 
-    return disp->CreateOHOSSurfaceOpenHarmony(instance, pCreateInfo, pAllocator, pSurface);
+    return disp->CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
 }
 
-// This is the instance chain terminator function for CreateOHOSSurfaceOpenHarmony
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateOHOSSurfaceOpenHarmony(VkInstance instance,
-                                                                       const VkOHOSSurfaceCreateInfoOpenHarmony *pCreateInfo,
+// This is the instance chain terminator function for CreateSurfaceOHOS
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSurfaceOHOS(VkInstance instance,
+                                                                       const VkSurfaceCreateInfoOHOS *pCreateInfo,
                                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkCreateOHOSSurfaceOpenHarmony not executed!\n");
+                   "VK_KHR_display extension not enabled. vkCreateSurfaceOHOS not executed!\n");
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
     // Next, if so, proceed with the implementation of this function:
-    VkIcdSurfaceOpenHarmony *pIcdSurface =
-        loader_instance_heap_alloc(loader_inst, sizeof(VkIcdSurfaceOpenHarmony), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+    VkIcdSurfaceOHOS *pIcdSurface =
+        loader_instance_heap_alloc(loader_inst, sizeof(VkIcdSurfaceOHOS), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (pIcdSurface == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_OPENHARMONY;
+    pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_OHOS;
     pIcdSurface->window = pCreateInfo->window;
 
     *pSurface = (VkSurfaceKHR)pIcdSurface;
@@ -1265,7 +1265,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateOHOSSurfaceOpenHarmony(VkInstanc
     return VK_SUCCESS;
 }
 
-#endif  // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#endif  // VK_USE_PLATFORM_OHOS
 
 
 // Functions for the VK_EXT_headless_surface extension:
@@ -2913,14 +2913,14 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
+#ifdef VK_USE_PLATFORM_OHOS
 
-    // Functions for the VK_OpenHarmony_OHOS_surface extension:
-    if (!strcmp("vkCreateOHOSSurfaceOpenHarmony", name)) {
-        *addr = loader_inst->wsi_openharmony_surface_enabled ? (void *)vkCreateOHOSSurfaceOpenHarmony : NULL;
+    // Functions for the VK_OHOS_surface extension:
+    if (!strcmp("vkCreateSurfaceOHOS", name)) {
+        *addr = loader_inst->wsi_ohos_surface_enabled ? (void *)vkCreateSurfaceOHOS : NULL;
         return true;
     }
-#endif  // VK_USE_PLATFORM_OHOS_OPENHARMONY
+#endif  // VK_USE_PLATFORM_OHOS
 
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 

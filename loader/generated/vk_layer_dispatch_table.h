@@ -113,6 +113,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     PFN_vkCreateAndroidSurfaceKHR CreateAndroidSurfaceKHR;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+
     // ---- VK_KHR_win32_surface extension commands
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     PFN_vkCreateWin32SurfaceKHR CreateWin32SurfaceKHR;
@@ -277,10 +278,11 @@ typedef struct VkLayerInstanceDispatchTable_ {
 
     // ---- VK_NV_optical_flow extension commands
     PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
-    // ---- VK_OpenHarmony_OHOS_surface extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    PFN_vkCreateOHOSSurfaceOpenHarmony CreateOHOSSurfaceOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
+
+    // ---- VK_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
+#endif // VK_USE_PLATFORM_OHOS
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table
@@ -1022,6 +1024,25 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
     PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
 
+    // ---- VK_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkGetSwapchainGrallocUsageOHOS GetSwapchainGrallocUsageOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkAcquireImageOHOS AcquireImageOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkQueueSignalReleaseImageOHOS QueueSignalReleaseImageOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+
+    // ---- VK_OHOS_external_memory extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkGetNativeBufferPropertiesOHOS GetNativeBufferPropertiesOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkGetMemoryNativeBufferOHOS GetMemoryNativeBufferOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
@@ -1052,26 +1073,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdDrawMeshTasksEXT CmdDrawMeshTasksEXT;
     PFN_vkCmdDrawMeshTasksIndirectEXT CmdDrawMeshTasksIndirectEXT;
     PFN_vkCmdDrawMeshTasksIndirectCountEXT CmdDrawMeshTasksIndirectCountEXT;
-
-    // ---- VK_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    PFN_vkGetSwapchainGrallocUsageOpenHarmony GetSwapchainGrallocUsageOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    PFN_vkSetNativeFenceFdOpenHarmony SetNativeFenceFdOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    PFN_vkGetNativeFenceFdOpenHarmony GetNativeFenceFdOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
-    // ---- VK_OpenHarmony_external_memory_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    PFN_vkGetOHOSNativeBufferPropertiesOpenHarmony GetOHOSNativeBufferPropertiesOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    PFN_vkGetMemoryOHOSNativeBufferOpenHarmony GetMemoryOHOSNativeBufferOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
 } VkLayerDispatchTable;
 
 

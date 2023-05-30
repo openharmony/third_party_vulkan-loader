@@ -229,9 +229,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 #endif
 
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateOHOSSurfaceOpenHarmony(VkInstance instance, 
-                                                                       const VkOHOSSurfaceCreateInfoOpenHarmony* pCreateInfo,
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSurfaceOHOS(VkInstance instance,
+                                                                       const VkSurfaceCreateInfoOHOS* pCreateInfo,
                                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 #endif
 
