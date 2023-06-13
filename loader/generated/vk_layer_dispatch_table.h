@@ -1026,6 +1026,12 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_OHOS_native_buffer extension commands
 #ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkSetNativeFenceFdOpenHarmony SetNativeFenceFdOpenHarmony;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkGetNativeFenceFdOpenHarmony GetNativeFenceFdOpenHarmony;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
     PFN_vkGetSwapchainGrallocUsageOHOS GetSwapchainGrallocUsageOHOS;
 #endif // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_OHOS
