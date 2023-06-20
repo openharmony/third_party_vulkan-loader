@@ -47,7 +47,7 @@ WSI_EXT_NAMES = ['VK_KHR_surface',
                  'VK_KHR_get_surface_capabilities2',
                  'VK_QNX_screen_surface',
                  'VK_NN_vi_surface',
-                 'VK_OpenHarmony_OHOS_surface']
+                 'VK_OHOS_surface']
 
 ADD_INST_CMDS = ['vkCreateInstance',
                  'vkEnumerateInstanceExtensionProperties',

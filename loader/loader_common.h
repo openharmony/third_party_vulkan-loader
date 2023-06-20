@@ -322,8 +322,8 @@ struct loader_instance {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool wsi_android_surface_enabled;
 #endif
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    bool wsi_openharmony_surface_enabled;
+#ifdef VK_USE_PLATFORM_OHOS
+    bool wsi_ohos_surface_enabled;
 #endif
 #ifdef VK_USE_PLATFORM_MACOS_MVK
     bool wsi_macos_surface_enabled;

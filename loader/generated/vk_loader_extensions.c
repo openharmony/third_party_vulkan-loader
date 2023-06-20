@@ -266,10 +266,6 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
 #ifdef VK_USE_PLATFORM_FUCHSIA
     LOOKUP_GIPA(CreateImagePipeSurfaceFUCHSIA, false);
 #endif // VK_USE_PLATFORM_FUCHSIA
-    // ---- VK_OpenHarmony_OHOS_surface extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    LOOKUP_GIPA(CreateOHOSSurfaceOpenHarmony, false);
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -326,6 +322,11 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_icd_term *icd_t
 
     // ---- VK_NV_optical_flow extension commands
     LOOKUP_GIPA(GetPhysicalDeviceOpticalFlowImageFormatsNV, false);
+
+    // ---- VK_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    LOOKUP_GIPA(CreateSurfaceOHOS, false);
+#endif // VK_USE_PLATFORM_OHOS
 
 #undef LOOKUP_GIPA
 
@@ -1083,6 +1084,31 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetFramebufferTilePropertiesQCOM = (PFN_vkGetFramebufferTilePropertiesQCOM)gdpa(dev, "vkGetFramebufferTilePropertiesQCOM");
     table->GetDynamicRenderingTilePropertiesQCOM = (PFN_vkGetDynamicRenderingTilePropertiesQCOM)gdpa(dev, "vkGetDynamicRenderingTilePropertiesQCOM");
 
+    // ---- VK_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    table->SetNativeFenceFdOpenHarmony = (PFN_vkSetNativeFenceFdOpenHarmony)gdpa(dev, "vkSetNativeFenceFdOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    table->GetNativeFenceFdOpenHarmony = (PFN_vkGetNativeFenceFdOpenHarmony)gdpa(dev, "vkGetNativeFenceFdOpenHarmony");
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    table->GetSwapchainGrallocUsageOHOS = (PFN_vkGetSwapchainGrallocUsageOHOS)gdpa(dev, "vkGetSwapchainGrallocUsageOHOS");
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    table->AcquireImageOHOS = (PFN_vkAcquireImageOHOS)gdpa(dev, "vkAcquireImageOHOS");
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    table->QueueSignalReleaseImageOHOS = (PFN_vkQueueSignalReleaseImageOHOS)gdpa(dev, "vkQueueSignalReleaseImageOHOS");
+#endif // VK_USE_PLATFORM_OHOS
+
+    // ---- VK_OHOS_external_memory extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    table->GetNativeBufferPropertiesOHOS = (PFN_vkGetNativeBufferPropertiesOHOS)gdpa(dev, "vkGetNativeBufferPropertiesOHOS");
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    table->GetMemoryNativeBufferOHOS = (PFN_vkGetMemoryNativeBufferOHOS)gdpa(dev, "vkGetMemoryNativeBufferOHOS");
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gdpa(dev, "vkDestroyAccelerationStructureKHR");
@@ -1113,24 +1139,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)gdpa(dev, "vkCmdDrawMeshTasksEXT");
     table->CmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)gdpa(dev, "vkCmdDrawMeshTasksIndirectEXT");
     table->CmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)gdpa(dev, "vkCmdDrawMeshTasksIndirectCountEXT");
-        // ---- VK_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    table->GetSwapchainGrallocUsageOpenHarmony = (PFN_vkGetSwapchainGrallocUsageOpenHarmony)gdpa(dev, "vkGetSwapchainGrallocUsageOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    table->SetNativeFenceFdOpenHarmony = (PFN_vkSetNativeFenceFdOpenHarmony)gdpa(dev, "vkSetNativeFenceFdOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    table->GetNativeFenceFdOpenHarmony = (PFN_vkGetNativeFenceFdOpenHarmony)gdpa(dev, "vkGetNativeFenceFdOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
-    // ---- VK_OpenHarmony_external_memory_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    table->GetOHOSNativeBufferPropertiesOpenHarmony = (PFN_vkGetOHOSNativeBufferPropertiesOpenHarmony)gdpa(dev, "vkGetOHOSNativeBufferPropertiesOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    table->GetMemoryOHOSNativeBufferOpenHarmony = (PFN_vkGetMemoryOHOSNativeBufferOpenHarmony)gdpa(dev, "vkGetMemoryOHOSNativeBufferOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 }
 
 // Init Instance function pointer dispatch table with core commands
@@ -1332,11 +1340,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
     table->CreateImagePipeSurfaceFUCHSIA = (PFN_vkCreateImagePipeSurfaceFUCHSIA)gpa(inst, "vkCreateImagePipeSurfaceFUCHSIA");
 #endif // VK_USE_PLATFORM_FUCHSIA
 
-    // ---- VK_OpenHarmony_OHOS_surface extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    table->CreateOHOSSurfaceOpenHarmony = (PFN_vkCreateOHOSSurfaceOpenHarmony)gpa(inst, "vkCreateOHOSSurfaceOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
     table->CreateMetalSurfaceEXT = (PFN_vkCreateMetalSurfaceEXT)gpa(inst, "vkCreateMetalSurfaceEXT");
@@ -1389,6 +1392,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_NV_optical_flow extension commands
     table->GetPhysicalDeviceOpticalFlowImageFormatsNV = (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV)gpa(inst, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV");
+
+    // ---- VK_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    table->CreateSurfaceOHOS = (PFN_vkCreateSurfaceOHOS)gpa(inst, "vkCreateSurfaceOHOS");
+#endif // VK_USE_PLATFORM_OHOS
 }
 
 // Device command lookup function
@@ -2131,6 +2139,31 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetFramebufferTilePropertiesQCOM")) return (void *)table->GetFramebufferTilePropertiesQCOM;
     if (!strcmp(name, "GetDynamicRenderingTilePropertiesQCOM")) return (void *)table->GetDynamicRenderingTilePropertiesQCOM;
 
+    // ---- VK_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "SetNativeFenceFdOpenHarmony")) return (void *)table->SetNativeFenceFdOpenHarmony;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "GetNativeFenceFdOpenHarmony")) return (void *)table->GetNativeFenceFdOpenHarmony;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "GetSwapchainGrallocUsageOHOS")) return (void *)table->GetSwapchainGrallocUsageOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "AcquireImageOHOS")) return (void *)table->AcquireImageOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "QueueSignalReleaseImageOHOS")) return (void *)table->QueueSignalReleaseImageOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+
+    // ---- VK_OHOS_external_memory extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "GetNativeBufferPropertiesOHOS")) return (void *)table->GetNativeBufferPropertiesOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "GetMemoryNativeBufferOHOS")) return (void *)table->GetMemoryNativeBufferOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
     if (!strcmp(name, "DestroyAccelerationStructureKHR")) return (void *)table->DestroyAccelerationStructureKHR;
@@ -2366,11 +2399,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     if (!strcmp(name, "CreateImagePipeSurfaceFUCHSIA")) return (void *)table->CreateImagePipeSurfaceFUCHSIA;
 #endif // VK_USE_PLATFORM_FUCHSIA
 
-    // ---- VK_OpenHarmony_OHOS_surface extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    if (!strcmp(name, "CreateOHOSSurfaceOpenHarmony")) return (void *)table->CreateOHOSSurfaceOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
     if (!strcmp(name, "CreateMetalSurfaceEXT")) return (void *)table->CreateMetalSurfaceEXT;
@@ -2423,6 +2451,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_NV_optical_flow extension commands
     if (!strcmp(name, "GetPhysicalDeviceOpticalFlowImageFormatsNV")) return (void *)table->GetPhysicalDeviceOpticalFlowImageFormatsNV;
+
+    // ---- VK_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp(name, "CreateSurfaceOHOS")) return (void *)table->CreateSurfaceOHOS;
+#endif // VK_USE_PLATFORM_OHOS
 
     *found_name = false;
     return NULL;
@@ -7414,6 +7447,132 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 }
 
 
+// ---- VK_OHOS_native_buffer extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL SetNativeFenceFdOpenHarmony(
+    VkDevice                                    device,
+    int32_t                                     nativeFenceFd,
+    VkSemaphore                                 semaphore,
+    VkFence                                     fence) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkSetNativeFenceFdOpenHarmony: Invalid device "
+                   "[VUID-vkSetNativeFenceFdOpenHarmony-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->SetNativeFenceFdOpenHarmony(device, nativeFenceFd, semaphore, fence);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL GetNativeFenceFdOpenHarmony(
+    VkQueue                                     queue,
+    uint32_t                                    waitSemaphoreCount,
+    const VkSemaphore*                          pWaitSemaphores,
+    VkImage                                     image,
+    int32_t*                                    pNativeFenceFd) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetNativeFenceFdOpenHarmony: Invalid queue "
+                   "[VUID-vkGetNativeFenceFdOpenHarmony-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetNativeFenceFdOpenHarmony(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainGrallocUsageOHOS(
+    VkDevice                                    device,
+    VkFormat                                    format,
+    VkImageUsageFlags                           imageUsage,
+    uint64_t*                                   grallocUsage) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetSwapchainGrallocUsageOHOS: Invalid device "
+                   "[VUID-vkGetSwapchainGrallocUsageOHOS-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetSwapchainGrallocUsageOHOS(device, format, imageUsage, grallocUsage);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL AcquireImageOHOS(
+    VkDevice                                    device,
+    VkImage                                     image,
+    int32_t                                     nativeFenceFd,
+    VkSemaphore                                 semaphore,
+    VkFence                                     fence) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkAcquireImageOHOS: Invalid device "
+                   "[VUID-vkAcquireImageOHOS-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL QueueSignalReleaseImageOHOS(
+    VkQueue                                     queue,
+    uint32_t                                    waitSemaphoreCount,
+    const VkSemaphore*                          pWaitSemaphores,
+    VkImage                                     image,
+    int32_t*                                    pNativeFenceFd) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkQueueSignalReleaseImageOHOS: Invalid queue "
+                   "[VUID-vkQueueSignalReleaseImageOHOS-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->QueueSignalReleaseImageOHOS(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+
+// ---- VK_OHOS_external_memory extension trampoline/terminators
+
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL vkGetNativeBufferPropertiesOHOS(
+    VkDevice                                    device,
+    const struct OH_NativeBuffer*               buffer,
+    VkNativeBufferPropertiesOHOS*               pProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetNativeBufferPropertiesOHOS: Invalid device "
+                   "[VUID-vkGetNativeBufferPropertiesOHOS-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetNativeBufferPropertiesOHOS(device, buffer, pProperties);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL vkGetMemoryNativeBufferOHOS(
+    VkDevice                                    device,
+    const VkMemoryGetNativeBufferInfoOHOS*      pInfo,
+    struct OH_NativeBuffer**                    pBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetMemoryNativeBufferOHOS: Invalid device "
+                   "[VUID-vkGetMemoryNativeBufferOHOS-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetMemoryNativeBufferOHOS(device, pInfo, pBuffer);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -7805,94 +7964,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(
     }
     disp->CmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
-
-// ---- VK_OHOS_native_buffer extension trampoline/terminators
-
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-VKAPI_ATTR VkResult GetSwapchainGrallocUsageOpenHarmony(
-    VkDevice                          device,
-    VkFormat                          format,
-    VkImageUsageFlags                 imageUsage,
-    uint64_t*                         grallocUsage) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetSwapchainGrallocUsageOpenHarmony: Invalid device "
-                   "[VUID-vkGetSwapchainGrallocUsageOpenHarmony-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetSwapchainGrallocUsageOpenHarmony(device, format, imageUsage, grallocUsage);
-}
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-VKAPI_ATTR VkResult SetNativeFenceFdOpenHarmony(
-    VkDevice                          device,
-    int32_t                           nativeFenceFd,
-    VkSemaphore                       semaphore,
-    VkFence                           fence) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkSetNativeFenceFdOpenHarmony: Invalid device "
-                   "[VUID-vkSetNativeFenceFdOpenHarmony-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->SetNativeFenceFdOpenHarmony(device, nativeFenceFd, semaphore, fence);
-}
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-VKAPI_ATTR VkResult GetNativeFenceFdOpenHarmony(
-    VkQueue                           queue,
-    uint32_t                          waitSemaphoreCount,
-    const VkSemaphore*                pWaitSemaphores,
-    VkImage                           image,
-    int32_t*                          pNativeFenceFd) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetNativeFenceFdOpenHarmony: Invalid queue "
-                   "[VUID-vkGetNativeFenceFdOpenHarmony-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetNativeFenceFdOpenHarmony(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
-}
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
-// ---- VK_OpenHarmony_external_memory_OHOS_native_buffer extension trampoline/terminators
-
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-VKAPI_ATTR VkResult GetOHOSNativeBufferPropertiesOpenHarmony(
-    VkDevice                                    device,
-    const struct OH_NativeBuffer*               buffer,
-    VkOHOSNativeBufferPropertiesOpenHarmony*    pProperties) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetOHOSNativeBufferPropertiesOpenHarmony: Invalid device "
-                   "[VUID-vkGetOHOSNativeBufferPropertiesOpenHarmony-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetOHOSNativeBufferPropertiesOpenHarmony(device, buffer, pProperties);
-}
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-VKAPI_ATTR VkResult GetMemoryOHOSNativeBufferOpenHarmony(
-    VkDevice                                          device,
-    const VkMemoryGetOHOSNativeBufferInfoOpenHarmony* pInfo,
-    struct OH_NativeBuffer**                          pBuffer) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetMemoryOHOSNativeBufferOpenHarmony: Invalid device "
-                   "[VUID-vkGetMemoryOHOSNativeBufferOpenHarmony-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetMemoryOHOSNativeBufferOpenHarmony(device, pInfo, pBuffer);
-}
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 
 // GPA helpers for extensions
 bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr) {
@@ -9491,6 +9562,52 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_OHOS_native_buffer extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp("vkSetNativeFenceFdOpenHarmony", name)) {
+        *addr = (void *)SetNativeFenceFdOpenHarmony;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp("vkGetNativeFenceFdOpenHarmony", name)) {
+        *addr = (void *)GetNativeFenceFdOpenHarmony;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp("vkGetSwapchainGrallocUsageOHOS", name)) {
+        *addr = (void *)GetSwapchainGrallocUsageOHOS;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp("vkAcquireImageOHOS", name)) {
+        *addr = (void *)AcquireImageOHOS;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp("vkQueueSignalReleaseImageOHOS", name)) {
+        *addr = (void *)QueueSignalReleaseImageOHOS;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+
+    // ---- VK_OHOS_external_memory extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp("vkGetNativeBufferPropertiesOHOS", name)) {
+        *addr = (void *)vkGetNativeBufferPropertiesOHOS;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_OHOS
+    if (!strcmp("vkGetMemoryNativeBufferOHOS", name)) {
+        *addr = (void *)vkGetMemoryNativeBufferOHOS;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {
         *addr = (void *)CreateAccelerationStructureKHR;
@@ -9596,40 +9713,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)CmdDrawMeshTasksIndirectCountEXT;
         return true;
     }
-
-    // ---- VK_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    if (!strcmp("vkGetSwapchainGrallocUsageOpenHarmony", name)) {
-        *addr = (void *)GetSwapchainGrallocUsageOpenHarmony;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    if (!strcmp("vkSetNativeFenceFdOpenHarmony", name)) {
-        *addr = (void *)SetNativeFenceFdOpenHarmony;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    if (!strcmp("vkGetNativeFenceFdOpenHarmony", name)) {
-        *addr = (void *)GetNativeFenceFdOpenHarmony;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
-    // ---- VK_OpenHarmony_external_memory_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    if (!strcmp("vkGetOHOSNativeBufferPropertiesOpenHarmony", name)) {
-        *addr = (void *)GetOHOSNativeBufferPropertiesOpenHarmony;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    if (!strcmp("vkGetMemoryOHOSNativeBufferOpenHarmony", name)) {
-        *addr = (void *)GetMemoryOHOSNativeBufferOpenHarmony;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
     return false;
 }
 
@@ -9944,11 +10027,6 @@ const VkLayerInstanceDispatchTable instance_disp = {
     .CreateImagePipeSurfaceFUCHSIA = terminator_CreateImagePipeSurfaceFUCHSIA,
 #endif // VK_USE_PLATFORM_FUCHSIA
 
-    // ---- VK_OpenHarmony_OHOS_surface extension commands
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-    .CreateOHOSSurfaceOpenHarmony = terminator_CreateOHOSSurfaceOpenHarmony,
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
-
     // ---- VK_EXT_metal_surface extension commands
 #ifdef VK_USE_PLATFORM_METAL_EXT
     .CreateMetalSurfaceEXT = terminator_CreateMetalSurfaceEXT,
@@ -10001,6 +10079,11 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_NV_optical_flow extension commands
     .GetPhysicalDeviceOpticalFlowImageFormatsNV = terminator_GetPhysicalDeviceOpticalFlowImageFormatsNV,
+
+    // ---- VK_OHOS_surface extension commands
+#ifdef VK_USE_PLATFORM_OHOS
+    .CreateSurfaceOHOS = terminator_CreateSurfaceOHOS,
+#endif // VK_USE_PLATFORM_OHOS
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
@@ -10056,9 +10139,6 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #ifdef VK_USE_PLATFORM_FUCHSIA
                                                   VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_OHOS_OPENHARMONY
-                                                  VK_OPENHARMONY_OHOS_SURFACE_EXTENSION_NAME,
-#endif // VK_USE_PLATFORM_OHOS_OPENHARMONY
 #ifdef VK_USE_PLATFORM_METAL_EXT
                                                   VK_EXT_METAL_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_METAL_EXT
@@ -10072,5 +10152,8 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_QNX_SCREEN_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_SCREEN_QNX
                                                   VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_OHOS
+                                                  VK_OHOS_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_OHOS
                                                   NULL };
 

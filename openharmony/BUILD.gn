@@ -38,7 +38,7 @@ config("vulkan_internal_config") {
     "SYSCONFDIR=\"/system/etc\"",
     "FALLBACK_CONFIG_DIRS=\"/vendor/etc\"",
     "FALLBACK_DATA_DIRS=\"/data\"",
-    "VK_USE_PLATFORM_OHOS_OPENHARMONY",
+    "VK_USE_PLATFORM_OHOS",
   ]
 }
 
