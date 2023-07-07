@@ -103,7 +103,7 @@ ohos_shared_library("vulkan_loader") {
   output_name = "vulkan"
   output_extension = "so"
 
-  part_name = "graphic_standard"
+  part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
 ## Build libvulkan.so }}}
