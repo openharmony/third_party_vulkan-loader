@@ -123,10 +123,10 @@ swapchain_layer是实现Vulkan-Loader与OpenHarmony平台本地窗口(OHNativeWi
 
 适配OpenHarmony平台的编译脚本请见：[openharmony/BUILD.gn](openharmony/BUILD.gn)
 
-由于graphic_standard模块的编译脚本中包含了Vulkan-Loader（详见：[bundle.json](https://gitee.com/openharmony/graphic_graphic_2d/blob/master/bundle.json)），所以编译graphic_standard模块可以将Vulkan-Loader同时编译出来，以rk3568平台为例，编译命令：
+由于graphic_2d模块的编译脚本中包含了Vulkan-Loader（详见：[bundle.json](https://gitee.com/openharmony/graphic_graphic_2d/blob/master/bundle.json)），所以编译graphic_2d模块可以将Vulkan-Loader同时编译出来，以rk3568平台为例，编译命令：
 
 ```shell
-./build.sh --product-name rk3568 --ccache --build-target graphic_standard
+./build.sh --product-name rk3568 --ccache --build-target graphic_2d
 ```
 
 也可以单独编译Vulkan-Loader：
@@ -135,7 +135,7 @@ swapchain_layer是实现Vulkan-Loader与OpenHarmony平台本地窗口(OHNativeWi
 ./build.sh --product-name rk3568 --ccache --build-target vulkan_loader
 ```
 
-编译完成后会在`out/rk3568/graphic/graphic_standard`目录下生成`libvulkan.so`
+编译完成后会在`out/rk3568/graphic/graphic_2d`目录下生成`libvulkan.so`
 
 
 ## License
