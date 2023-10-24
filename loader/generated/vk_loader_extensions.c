@@ -1086,12 +1086,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_OHOS_native_buffer extension commands
 #ifdef VK_USE_PLATFORM_OHOS
-    table->SetNativeFenceFdOpenHarmony = (PFN_vkSetNativeFenceFdOpenHarmony)gdpa(dev, "vkSetNativeFenceFdOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS
-#ifdef VK_USE_PLATFORM_OHOS
-    table->GetNativeFenceFdOpenHarmony = (PFN_vkGetNativeFenceFdOpenHarmony)gdpa(dev, "vkGetNativeFenceFdOpenHarmony");
-#endif // VK_USE_PLATFORM_OHOS
-#ifdef VK_USE_PLATFORM_OHOS
     table->GetSwapchainGrallocUsageOHOS = (PFN_vkGetSwapchainGrallocUsageOHOS)gdpa(dev, "vkGetSwapchainGrallocUsageOHOS");
 #endif // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_OHOS
@@ -2140,12 +2134,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetDynamicRenderingTilePropertiesQCOM")) return (void *)table->GetDynamicRenderingTilePropertiesQCOM;
 
     // ---- VK_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS
-    if (!strcmp(name, "SetNativeFenceFdOpenHarmony")) return (void *)table->SetNativeFenceFdOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS
-#ifdef VK_USE_PLATFORM_OHOS
-    if (!strcmp(name, "GetNativeFenceFdOpenHarmony")) return (void *)table->GetNativeFenceFdOpenHarmony;
-#endif // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_OHOS
     if (!strcmp(name, "GetSwapchainGrallocUsageOHOS")) return (void *)table->GetSwapchainGrallocUsageOHOS;
 #endif // VK_USE_PLATFORM_OHOS
@@ -7450,41 +7438,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 // ---- VK_OHOS_native_buffer extension trampoline/terminators
 
 #ifdef VK_USE_PLATFORM_OHOS
-VKAPI_ATTR VkResult VKAPI_CALL SetNativeFenceFdOpenHarmony(
-    VkDevice                                    device,
-    int32_t                                     nativeFenceFd,
-    VkSemaphore                                 semaphore,
-    VkFence                                     fence) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkSetNativeFenceFdOpenHarmony: Invalid device "
-                   "[VUID-vkSetNativeFenceFdOpenHarmony-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->SetNativeFenceFdOpenHarmony(device, nativeFenceFd, semaphore, fence);
-}
-
-#endif // VK_USE_PLATFORM_OHOS
-#ifdef VK_USE_PLATFORM_OHOS
-VKAPI_ATTR VkResult VKAPI_CALL GetNativeFenceFdOpenHarmony(
-    VkQueue                                     queue,
-    uint32_t                                    waitSemaphoreCount,
-    const VkSemaphore*                          pWaitSemaphores,
-    VkImage                                     image,
-    int32_t*                                    pNativeFenceFd) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetNativeFenceFdOpenHarmony: Invalid queue "
-                   "[VUID-vkGetNativeFenceFdOpenHarmony-queue-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetNativeFenceFdOpenHarmony(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
-}
-
-#endif // VK_USE_PLATFORM_OHOS
-#ifdef VK_USE_PLATFORM_OHOS
 VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainGrallocUsageOHOS(
     VkDevice                                    device,
     VkFormat                                    format,
@@ -9563,18 +9516,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 
     // ---- VK_OHOS_native_buffer extension commands
-#ifdef VK_USE_PLATFORM_OHOS
-    if (!strcmp("vkSetNativeFenceFdOpenHarmony", name)) {
-        *addr = (void *)SetNativeFenceFdOpenHarmony;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS
-#ifdef VK_USE_PLATFORM_OHOS
-    if (!strcmp("vkGetNativeFenceFdOpenHarmony", name)) {
-        *addr = (void *)GetNativeFenceFdOpenHarmony;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_OHOS
     if (!strcmp("vkGetSwapchainGrallocUsageOHOS", name)) {
         *addr = (void *)GetSwapchainGrallocUsageOHOS;
