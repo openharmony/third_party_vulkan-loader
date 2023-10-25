@@ -1227,15 +1227,13 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSurfaceOHOS(VkInstance inst
                                                                             const VkSurfaceCreateInfoOHOS *pCreateInfo,
                                                                             const VkAllocationCallbacks *pAllocator,
                                                                             VkSurfaceKHR *pSurface) {
-    const VkLayerInstanceDispatchTable *disp;
-    if (NULL == loader_get_instance(instance)) {
-        loader_log(NULL, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+    struct loader_instance *loader_inst = loader_get_instance(instance);
+    if (NULL == loader_inst) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSurfaceOHOS: Invalid instance [VUID-vkCreateSurfaceOHOS-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp = loader_get_instance_layer_dispatch(instance);
-
-    return disp->CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
+    return loader_inst->disp->layer_inst_disp.CreateSurfaceOHOS(loader_inst->instance, pCreateInfo, pAllocator, pSurface);
 }
 
 // This is the instance chain terminator function for CreateSurfaceOHOS
@@ -1260,7 +1258,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSurfaceOHOS(VkInstance instance,
     pIcdSurface->base.platform = VK_ICD_WSI_PLATFORM_OHOS;
     pIcdSurface->window = pCreateInfo->window;
 
-    *pSurface = (VkSurfaceKHR)pIcdSurface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
     return VK_SUCCESS;
 }
