@@ -32,7 +32,9 @@ config("vulkan_internal_config") {
     "-Wno-unreachable-code",
     "-Wno-unused-function",
     "-Wno-unused-variable",
+    "-fPIC",
   ]
+  ldflags = [ "-Wl,-Bsymbolic" ]
 
   defines += [
     "SYSCONFDIR=\"/system/etc\"",
