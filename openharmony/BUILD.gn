@@ -107,5 +107,7 @@ ohos_shared_library("vulkan_loader") {
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
+
+  license_file = "//third_party/vulkan-headers/LICENSE.txt"
 }
 ## Build libvulkan.so }}}
