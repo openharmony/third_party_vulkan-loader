@@ -20,22 +20,16 @@
 
 #undef LOG_DOMAIN
 #undef LOG_TAG
-#define LOG_DOMAIN 0xD001402
+#define LOG_DOMAIN 0xD001405
 #define LOG_TAG "VulkanLoader"
 
 #define VKHILOGD(fmt, ...) HILOG_DEBUG(LOG_CORE, fmt, ##__VA_ARGS__)
-#define VKHILOGI(fmt, ...) HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__)
-#define VKHILOGW(fmt, ...) HILOG_WARN(LOG_CORE, fmt, ##__VA_ARGS__)
 #define VKHILOGE(fmt, ...) HILOG_ERROR(LOG_CORE, fmt, ##__VA_ARGS__)
 
 void OpenHarmonyLog(VkFlags log_type, char *log_msg)
 {
     if (log_type & VULKAN_LOADER_ERROR_BIT) {
         VKHILOGE("%{public}s", log_msg);
-    } else if (log_type & VULKAN_LOADER_WARN_BIT) {
-        VKHILOGW("%{public}s", log_msg);
-    } else if (log_type & VULKAN_LOADER_INFO_BIT) {
-        VKHILOGI("%{public}s", log_msg);
     } else {
         VKHILOGD("%{public}s", log_msg);
     }
