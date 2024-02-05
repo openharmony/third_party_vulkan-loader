@@ -1242,9 +1242,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSurfaceOHOS(VkInstance instance,
                                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
-    if (!loader_inst->wsi_display_enabled) {
+    if (!loader_inst->wsi_ohos_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkCreateSurfaceOHOS not executed!\n");
+                   "VK_OHOS_surface extension not enabled. vkCreateSurfaceOHOS not executed!\n");
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
