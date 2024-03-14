@@ -95,7 +95,7 @@ ohos_shared_library("vulkan_loader") {
 
   configs = [ ":vulkan_internal_config" ]
   public_configs = [ ":vulkan_loader_config" ]
-  external_deps = [
+  public_external_deps = [
     "hilog:libhilog",
     "vulkan-headers:vulkan_headers",
   ]
