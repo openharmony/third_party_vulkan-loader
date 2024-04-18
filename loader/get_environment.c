@@ -30,6 +30,7 @@
 
 #include "allocation.h"
 #include "log.h"
+#include "param/sys_param.h"
 
 // Environment variables
 #if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNXNTO__) || defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -37,10 +38,21 @@
 bool is_high_integrity() { return geteuid() != getuid() || getegid() != getgid(); }
 
 char *loader_getenv(const char *name, const struct loader_instance *inst) {
+#ifdef __OHOS__
+    CachedHandle g_Handle = CachedParameterCreate(name, "");
+    int changed = 0;
+    const char *res = CachedParameterGetChanged(g_Handle, &changed);
+    loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_INFO_BIT, 0, "loader_getenv name:%s, res:%s", name, res);
+    if (res == NULL || res[0] == '\0') {
+        return NULL;
+    }
+    return (char *)res;
+#else
     // No allocation of memory necessary for Linux, but we should at least touch
     // the inst pointer to get rid of compiler warnings.
     (void)inst;
     return getenv(name);
+#endif
 }
 
 char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {

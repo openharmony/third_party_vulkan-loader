@@ -343,7 +343,11 @@ static inline const char *loader_platform_open_library_error(const char *libPath
     return dlerror();
 #endif
 }
-static inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
+static inline void loader_platform_close_library(loader_platform_dl_handle library) {
+#if !defined (__OHOS__)
+    dlclose(library);
+#endif
+}
 static inline void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);
     assert(name);

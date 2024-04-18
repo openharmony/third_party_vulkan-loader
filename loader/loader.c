@@ -2895,7 +2895,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
     char *xdg_config_dirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
 
-#if !defined(__Fuchsia__) && !defined(__QNXNTO__)
+#if !defined(__Fuchsia__) && !defined(__QNXNTO__) && !defined(__OHOS__)
     if (NULL == xdg_config_dirs || '\0' == xdg_config_dirs[0]) {
         xdg_config_dirs = FALLBACK_CONFIG_DIRS;
     }
@@ -2904,7 +2904,7 @@ static VkResult read_data_files_in_search_paths(const struct loader_instance *in
     char *xdg_data_home = loader_secure_getenv("XDG_DATA_HOME", inst);
     char *xdg_data_dirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
 
-#if !defined(__Fuchsia__) && !defined(__QNXNTO__)
+#if !defined(__Fuchsia__) && !defined(__QNXNTO__) && !defined(__OHOS__)
     if (NULL == xdg_data_dirs || '\0' == xdg_data_dirs[0]) {
         xdg_data_dirs = FALLBACK_DATA_DIRS;
     }

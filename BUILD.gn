@@ -35,9 +35,7 @@ config("vulkan_internal_config") {
   ldflags = [ "-Wl,-Bsymbolic" ]
 
   defines += [
-    "SYSCONFDIR=\"/system/etc\"",
-    "FALLBACK_CONFIG_DIRS=\"/vendor/etc\"",
-    "FALLBACK_DATA_DIRS=\"/data\"",
+    "SYSCONFDIR=\"/system/etc:/system/etc/vulkan/swapchain:/vendor/etc\"",
     "VK_USE_PLATFORM_OHOS",
   ]
 }
@@ -95,7 +93,10 @@ ohos_shared_library("vulkan_loader") {
 
   configs = [ ":vulkan_internal_config" ]
   public_configs = [ ":vulkan_loader_config" ]
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
   public_external_deps = [ "vulkan-headers:vulkan_headers" ]
 
   innerapi_tags = [ "platformsdk" ]
