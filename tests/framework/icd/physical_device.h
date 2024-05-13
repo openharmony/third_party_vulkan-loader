@@ -34,8 +34,7 @@ struct PhysicalDevice {
     PhysicalDevice() {}
     PhysicalDevice(std::string name) : deviceName(name) {}
     PhysicalDevice(const char* name) : deviceName(name) {}
-    PhysicalDevice(std::string name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
-    PhysicalDevice(const char* name, uint32_t bus) : deviceName(name), pci_bus(bus) {}
+
     DispatchableHandle<VkPhysicalDevice> vk_physical_device;
     BUILDER_VALUE(PhysicalDevice, std::string, deviceName, "")
     BUILDER_VALUE(PhysicalDevice, VkPhysicalDeviceProperties, properties, {})
@@ -64,9 +63,19 @@ struct PhysicalDevice {
     BUILDER_VALUE(PhysicalDevice, VkDisplayModeKHR, display_mode, {})
     BUILDER_VALUE(PhysicalDevice, VkDisplayPlaneCapabilitiesKHR, display_plane_capabilities, {})
 
-    // VkDevice handles created from this physical device
-    std::vector<VkDevice> device_handles;
+    BUILDER_VALUE(PhysicalDevice, VkLayeredDriverUnderlyingApiMSFT, layered_driver_underlying_api,
+                  VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT)
 
+    PhysicalDevice& set_api_version(uint32_t version) {
+        properties.apiVersion = version;
+        return *this;
+    }
+
+    PhysicalDevice&& finish() { return std::move(*this); }
+
+    // Objects created from this physical device
+    std::vector<VkDevice> device_handles;
+    std::vector<DeviceCreateInfo> device_create_infos;
     std::vector<DispatchableHandle<VkQueue>> queue_handles;
 
     // Unknown physical device functions. Add a `VulkanFunction` to this list which will be searched in

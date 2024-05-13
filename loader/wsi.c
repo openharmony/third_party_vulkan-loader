@@ -44,67 +44,67 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
             loader_inst->wsi_surface_enabled = true;
             continue;
         }
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_WIN32_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_win32_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_wayland_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_XCB_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_xcb_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_XLIB_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_xlib_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_directfb_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_android_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_OHOS_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_ohos_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_OHOS
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_MVK_MACOS_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_macos_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_MVK_IOS_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_ios_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_ggp_surface_enabled = true;
             continue;
         }
 #endif  // VK_USE_PLATFORM_GGP
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_imagepipe_surface_enabled = true;
             continue;
@@ -126,7 +126,7 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
             continue;
         }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_NN_VI_SURFACE_EXTENSION_NAME) == 0) {
             loader_inst->wsi_vi_surface_enabled = true;
             continue;
@@ -153,19 +153,19 @@ void wsi_create_instance(struct loader_instance *loader_inst, const VkInstanceCr
 // advertises support for a given Linux surface extension but the loader was not
 // built to support the extension.
 bool wsi_unsupported_instance_extension(const VkExtensionProperties *ext_prop) {
-#ifndef VK_USE_PLATFORM_WAYLAND_KHR
+#if !defined(VK_USE_PLATFORM_WAYLAND_KHR)
     if (!strcmp(ext_prop->extensionName, "VK_KHR_wayland_surface")) return true;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifndef VK_USE_PLATFORM_XCB_KHR
+#if !defined(VK_USE_PLATFORM_XCB_KHR)
     if (!strcmp(ext_prop->extensionName, "VK_KHR_xcb_surface")) return true;
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifndef VK_USE_PLATFORM_XLIB_KHR
+#if !defined(VK_USE_PLATFORM_XLIB_KHR)
     if (!strcmp(ext_prop->extensionName, "VK_KHR_xlib_surface")) return true;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifndef VK_USE_PLATFORM_DIRECTFB_EXT
+#if !defined(VK_USE_PLATFORM_DIRECTFB_EXT)
     if (!strcmp(ext_prop->extensionName, "VK_EXT_directfb_surface")) return true;
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifndef VK_USE_PLATFORM_SCREEN_QNX
+#if !defined(VK_USE_PLATFORM_SCREEN_QNX)
     if (!strcmp(ext_prop->extensionName, "VK_QNX_screen_surface")) return true;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -179,7 +179,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroySurfaceKHR(VkInstance instance
                                                              const VkAllocationCallbacks *pAllocator) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkDestroySurfaceKHR: Invalid instance [VUID-vkDestroySurfaceKHR-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -225,7 +225,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceSupportKH
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceSurfaceSupportKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceSurfaceSupportKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -245,13 +245,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceSupportKHR(VkP
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceSupportKHR not executed!\n");
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceSupportKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == pSupported) {
-        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "NULL pointer passed into vkGetPhysicalDeviceSurfaceSupportKHR for pSupported!\n");
+        loader_log(loader_inst, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "NULL pointer passed into vkGetPhysicalDeviceSurfaceSupportKHR for pSupported!");
         abort();
     }
     *pSupported = false;
@@ -260,7 +260,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceSupportKHR(VkP
         // set pSupported to false as this driver doesn't support WSI functionality
         *pSupported = false;
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceSupportKHR!");
         return VK_SUCCESS;
     }
 
@@ -280,7 +280,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceCapabilit
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -300,13 +300,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilitiesKH
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceCapabilitiesKHR not executed!\n");
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceCapabilitiesKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == pSurfaceCapabilities) {
-        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "NULL pointer passed into vkGetPhysicalDeviceSurfaceCapabilitiesKHR for pSurfaceCapabilities!\n");
+        loader_log(loader_inst, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "NULL pointer passed into vkGetPhysicalDeviceSurfaceCapabilitiesKHR for pSurfaceCapabilities!");
         abort();
     }
 
@@ -314,7 +314,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilitiesKH
         // Zero out the capabilities as this driver doesn't support WSI functionality
         memset(pSurfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!");
         return VK_SUCCESS;
     }
 
@@ -336,7 +336,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceFormatsKH
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceSurfaceFormatsKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -356,13 +356,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormatsKHR(VkP
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceFormatsKHR not executed!\n");
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceFormatsKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == pSurfaceFormatCount) {
-        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "NULL pointer passed into vkGetPhysicalDeviceSurfaceFormatsKHR for pSurfaceFormatCount!\n");
+        loader_log(loader_inst, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "NULL pointer passed into vkGetPhysicalDeviceSurfaceFormatsKHR for pSurfaceFormatCount!");
         abort();
     }
 
@@ -370,7 +370,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormatsKHR(VkP
         // Zero out the format count as this driver doesn't support WSI functionality
         *pSurfaceFormatCount = 0;
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfaceCapabilitiesKHR!");
         return VK_SUCCESS;
     }
 
@@ -394,7 +394,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfacePresentMo
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceSurfacePresentModesKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -414,13 +414,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfacePresentModesKHR not executed!\n");
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfacePresentModesKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == pPresentModeCount) {
-        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "NULL pointer passed into vkGetPhysicalDeviceSurfacePresentModesKHR for pPresentModeCount!\n");
+        loader_log(loader_inst, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "NULL pointer passed into vkGetPhysicalDeviceSurfacePresentModesKHR for pPresentModeCount!");
         abort();
     }
 
@@ -428,7 +428,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModesKH
         // Zero out the present mode count as this driver doesn't support WSI functionality
         *pPresentModeCount = 0;
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfacePresentModesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceSurfacePresentModesKHR!");
         return VK_SUCCESS;
     }
 
@@ -451,9 +451,17 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSwapchainKHR(VkDevice devic
                                                                   VkSwapchainKHR *pSwapchain) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSwapchainKHR: Invalid device [VUID-vkCreateSwapchainKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
+    }
+    if (NULL == disp->CreateSwapchainKHR) {
+        struct loader_device *dev = *((struct loader_device **)device);
+        loader_log(NULL != dev ? dev->phys_dev_term->this_icd_term->this_instance : NULL,
+                   VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                   "extension enabled?");
+        abort();
     }
     return disp->CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
 }
@@ -463,25 +471,42 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSwapchainKHR(VkDevice device, co
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL != icd_term && NULL != icd_term->dispatch.CreateSwapchainKHR) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfo->surface;
-        if (NULL != icd_surface->real_icd_surfaces) {
-            if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-                // We found the ICD, and there is an ICD KHR surface
-                // associated with it, so copy the CreateInfo struct
-                // and point it at the ICD's surface.
-                VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR));
-                if (NULL == pCreateCopy) {
-                    return VK_ERROR_OUT_OF_HOST_MEMORY;
-                }
-                memcpy(pCreateCopy, pCreateInfo, sizeof(VkSwapchainCreateInfoKHR));
-                pCreateCopy->surface = icd_surface->real_icd_surfaces[icd_index];
-                return icd_term->dispatch.CreateSwapchainKHR(device, pCreateCopy, pAllocator, pSwapchain);
-            }
-        }
-        return icd_term->dispatch.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+    if (NULL == icd_term || NULL == dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR Terminator: device handle. This is likely the result of a "
+                   "layer wrapping device handles and failing to unwrap them in all functions. "
+                   "[VUID-vkCreateSwapchainKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
     }
-    return VK_SUCCESS;
+    if (NULL == pCreateInfo) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR: Invalid pCreateInfo pointer [VUID-vkCreateSwapchainKHR-pCreateInfo-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    // Need to gracefully handle the function pointer not being found.
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                   "extension enabled?");
+        return VK_SUCCESS;
+    }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfo->surface;
+    if (NULL != icd_surface->real_icd_surfaces) {
+        if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+            // We found the ICD, and there is an ICD KHR surface
+            // associated with it, so copy the CreateInfo struct
+            // and point it at the ICD's surface.
+            VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR));
+            if (NULL == pCreateCopy) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+            memcpy(pCreateCopy, pCreateInfo, sizeof(VkSwapchainCreateInfoKHR));
+            pCreateCopy->surface = icd_surface->real_icd_surfaces[icd_index];
+            return dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR(device, pCreateCopy, pAllocator,
+                                                                                         pSwapchain);
+        }
+    }
+    return dev->loader_dispatch.extension_terminator_dispatch.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
 }
 
 // This is the trampoline entrypoint for DestroySwapchainKHR
@@ -489,7 +514,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroySwapchainKHR(VkDevice device, 
                                                                const VkAllocationCallbacks *pAllocator) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkDestroySwapchainKHR: Invalid device [VUID-vkDestroySwapchainKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -501,7 +526,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetSwapchainImagesKHR(VkDevice de
                                                                      uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetSwapchainImagesKHR: Invalid device [VUID-vkGetSwapchainImagesKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -513,7 +538,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkAcquireNextImageKHR(VkDevice devi
                                                                    VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkAcquireNextImageKHR: Invalid device [VUID-vkAcquireNextImageKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -524,14 +549,14 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkAcquireNextImageKHR(VkDevice devi
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkQueuePresentKHR: Invalid queue [VUID-vkQueuePresentKHR-queue-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->QueuePresentKHR(queue, pPresentInfo);
 }
 
-static VkIcdSurface *AllocateIcdSurfaceStruct(struct loader_instance *instance, size_t base_size, size_t platform_size) {
+VkIcdSurface *AllocateIcdSurfaceStruct(struct loader_instance *instance, size_t base_size, size_t platform_size) {
     // Next, if so, proceed with the implementation of this function:
     VkIcdSurface *pIcdSurface = loader_instance_heap_alloc(instance, sizeof(VkIcdSurface), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (pIcdSurface != NULL) {
@@ -552,7 +577,7 @@ static VkIcdSurface *AllocateIcdSurfaceStruct(struct loader_instance *instance, 
     return pIcdSurface;
 }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 
 // Functions for the VK_KHR_win32_surface extension:
 
@@ -563,7 +588,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWin32SurfaceKHR(VkInstance 
                                                                      VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateWin32SurfaceKHR: Invalid instance [VUID-vkCreateWin32SurfaceKHR-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -583,7 +608,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_win32_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_win32_surface extension not enabled. vkCreateWin32SurfaceKHR not executed!\n");
+                   "VK_KHR_win32_surface extension not enabled. vkCreateWin32SurfaceKHR not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -612,7 +637,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(pIcdSurface);
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -640,7 +665,7 @@ LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceWin32Presentatio
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceWin32PresentationSupportKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -659,14 +684,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupp
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_win32_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_win32_surface extension not enabled. vkGetPhysicalDeviceWin32PresentationSupportKHR not executed!\n");
+                   "VK_KHR_win32_surface extension not enabled. vkGetPhysicalDeviceWin32PresentationSupportKHR not executed!");
         return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWin32PresentationSupportKHR) {
         // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceWin32PresentationSupportKHR!");
         return VK_FALSE;
     }
 
@@ -674,7 +699,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWin32PresentationSupp
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 
 // This is the trampoline entrypoint for CreateWaylandSurfaceKHR
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWaylandSurfaceKHR(VkInstance instance,
@@ -683,7 +708,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateWaylandSurfaceKHR(VkInstanc
                                                                        VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateWaylandSurfaceKHR: Invalid instance [VUID-vkCreateWaylandSurfaceKHR-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -702,7 +727,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance ins
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_wayland_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_wayland_surface extension not enabled. vkCreateWaylandSurfaceKHR not executed!\n");
+                   "VK_KHR_wayland_surface extension not enabled. vkCreateWaylandSurfaceKHR not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -760,7 +785,7 @@ LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceWaylandPresentat
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceWaylandPresentationSupportKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -779,16 +804,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWaylandPresentationSu
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_wayland_surface_enabled) {
-        loader_log(
-            loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-            "VK_KHR_wayland_surface extension not enabled. vkGetPhysicalDeviceWaylandPresentationSupportKHR not executed!\n");
+        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "VK_KHR_wayland_surface extension not enabled. vkGetPhysicalDeviceWaylandPresentationSupportKHR not executed!");
         return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceWaylandPresentationSupportKHR) {
         // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceWaylandPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceWaylandPresentationSupportKHR!");
         return VK_FALSE;
     }
 
@@ -796,7 +820,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceWaylandPresentationSu
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 
 // Functions for the VK_KHR_xcb_surface extension:
 
@@ -807,7 +831,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateXcbSurfaceKHR(VkInstance in
                                                                    VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateXcbSurfaceKHR: Invalid instance [VUID-vkCreateXcbSurfaceKHR-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -825,7 +849,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXcbSurfaceKHR(VkInstance instanc
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_xcb_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_xcb_surface extension not enabled. vkCreateXcbSurfaceKHR not executed!\n");
+                   "VK_KHR_xcb_surface extension not enabled. vkCreateXcbSurfaceKHR not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -884,7 +908,7 @@ LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceXcbPresentationS
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceXcbPresentationSupportKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -905,14 +929,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXcbPresentationSuppor
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_xcb_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_xcb_surface extension not enabled. vkGetPhysicalDeviceXcbPresentationSupportKHR not executed!\n");
+                   "VK_KHR_xcb_surface extension not enabled. vkGetPhysicalDeviceXcbPresentationSupportKHR not executed!");
         return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXcbPresentationSupportKHR) {
         // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceXcbPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceXcbPresentationSupportKHR!");
         return VK_FALSE;
     }
 
@@ -921,7 +945,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXcbPresentationSuppor
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 
 // Functions for the VK_KHR_xlib_surface extension:
 
@@ -932,7 +956,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateXlibSurfaceKHR(VkInstance i
                                                                     VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateXlibSurfaceKHR: Invalid instance [VUID-vkCreateXlibSurfaceKHR-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -950,7 +974,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instan
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_xlib_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_xlib_surface extension not enabled. vkCreateXlibSurfaceKHR not executed!\n");
+                   "VK_KHR_xlib_surface extension not enabled. vkCreateXlibSurfaceKHR not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -1008,7 +1032,7 @@ LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceXlibPresentation
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceXlibPresentationSupportKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -1028,14 +1052,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSuppo
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_xlib_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_xlib_surface extension not enabled. vkGetPhysicalDeviceXlibPresentationSupportKHR not executed!\n");
+                   "VK_KHR_xlib_surface extension not enabled. vkGetPhysicalDeviceXlibPresentationSupportKHR not executed!");
         return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceXlibPresentationSupportKHR) {
         // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceXlibPresentationSupportKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceXlibPresentationSupportKHR!");
         return VK_FALSE;
     }
 
@@ -1043,7 +1067,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSuppo
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 
 // Functions for the VK_EXT_directfb_surface extension:
 
@@ -1054,7 +1078,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDirectFBSurfaceEXT(VkInstan
                                                                         VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateDirectFBSurfaceEXT: Invalid instance [VUID-vkCreateDirectFBSurfaceEXT-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1074,7 +1098,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance in
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_directfb_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_EXT_directfb_surface extension not enabled. vkCreateDirectFBSurfaceEXT not executed!\n");
+                   "VK_EXT_directfb_surface extension not enabled. vkCreateDirectFBSurfaceEXT not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -1133,7 +1157,7 @@ LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceDirectFBPresenta
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceDirectFBPresentationSupportEXT: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -1154,14 +1178,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
     if (!loader_inst->wsi_directfb_surface_enabled) {
         loader_log(
             loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-            "VK_EXT_directfb_surface extension not enabled. vkGetPhysicalDeviceDirectFBPresentationSupportKHR not executed!\n");
+            "VK_EXT_directfb_surface extension not enabled. vkGetPhysicalDeviceDirectFBPresentationSupportKHR not executed!");
         return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDirectFBPresentationSupportEXT) {
         // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceDirectFBPresentationSupportEXT!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceDirectFBPresentationSupportEXT!");
         return VK_FALSE;
     }
 
@@ -1170,7 +1194,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceDirectFBPresentationS
 
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
 // Functions for the VK_KHR_android_surface extension:
 
@@ -1181,7 +1205,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateAndroidSurfaceKHR(VkInstanc
                                                                        VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateAndroidSurfaceKHR: Invalid instance [VUID-vkCreateAndroidSurfaceKHR-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1196,7 +1220,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkCreateAndroidSurfaceKHR not executed!\n");
+                   "VK_KHR_display extension not enabled. vkCreateAndroidSurfaceKHR not executed!");
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
@@ -1217,19 +1241,19 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
 
 // Functions for the VK_OHOS_surface extension:
 
 // This is the trampoline entrypoint for CreateSurfaceOHOS
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSurfaceOHOS(VkInstance instance,
-                                                                            const VkSurfaceCreateInfoOHOS *pCreateInfo,
-                                                                            const VkAllocationCallbacks *pAllocator,
-                                                                            VkSurfaceKHR *pSurface) {
+																 const VkSurfaceCreateInfoOHOS *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator,
+                                                                 VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSurfaceOHOS: Invalid instance [VUID-vkCreateSurfaceOHOS-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1238,8 +1262,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSurfaceOHOS(VkInstance inst
 
 // This is the instance chain terminator function for CreateSurfaceOHOS
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSurfaceOHOS(VkInstance instance,
-                                                                       const VkSurfaceCreateInfoOHOS *pCreateInfo,
-                                                                       const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+                                                            const VkSurfaceCreateInfoOHOS *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_ohos_surface_enabled) {
@@ -1274,7 +1298,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateHeadlessSurfaceEXT(VkInstan
                                                                         VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateHeadlessSurfaceEXT: Invalid instance [VUID-vkCreateHeadlessSurfaceEXT-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1293,7 +1317,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
     if (!inst->wsi_headless_surface_enabled) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_EXT_headless_surface extension not enabled.  "
-                   "vkCreateHeadlessSurfaceEXT not executed!\n");
+                   "vkCreateHeadlessSurfaceEXT not executed!");
         return VK_SUCCESS;
     }
 
@@ -1339,7 +1363,34 @@ out:
     return vkRes;
 }
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+// Ensure we are properly setting VK_USE_PLATFORM_METAL_EXT, VK_USE_PLATFORM_IOS_MVK, and VK_USE_PLATFORM_MACOS_MVK.
+#if __APPLE__
+
+#ifndef VK_USE_PLATFORM_METAL_EXT
+#error "VK_USE_PLATFORM_METAL_EXT not defined!"
+#endif
+
+#include <TargetConditionals.h>
+
+#if TARGET_OS_IOS
+
+#ifndef VK_USE_PLATFORM_IOS_MVK
+#error "VK_USE_PLATFORM_IOS_MVK not defined!"
+#endif
+
+#endif  //  TARGET_OS_IOS
+
+#if TARGET_OS_OSX
+
+#ifndef VK_USE_PLATFORM_MACOS_MVK
+#error "VK_USE_PLATFORM_MACOS_MVK not defined!"
+#endif
+
+#endif  // TARGET_OS_OSX
+
+#endif  // __APPLE__
+
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
 
 // Functions for the VK_MVK_macos_surface extension:
 
@@ -1350,7 +1401,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateMacOSSurfaceMVK(VkInstance 
                                                                      VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateMacOSSurfaceMVK: Invalid instance [VUID-vkCreateMacOSSurfaceMVK-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1368,7 +1419,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance insta
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_macos_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_MVK_macos_surface extension not enabled. vkCreateMacOSSurfaceMVK not executed!\n");
+                   "VK_MVK_macos_surface extension not enabled. vkCreateMacOSSurfaceMVK not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -1419,7 +1470,7 @@ out:
 
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
 
 // Functions for the VK_MVK_ios_surface extension:
 
@@ -1430,7 +1481,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateIOSSurfaceMVK(VkInstance in
                                                                    VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateIOSSurfaceMVK: Invalid instance [VUID-vkCreateIOSSurfaceMVK-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1440,11 +1491,13 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateIOSSurfaceMVK(VkInstance in
 // This is the instance chain terminator function for CreateIOSSurfaceKHR
 VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    (void)pAllocator;
+
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_ios_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_MVK_ios_surface extension not enabled. vkCreateIOSSurfaceMVK not executed!\n");
+                   "VK_MVK_ios_surface extension not enabled. vkCreateIOSSurfaceMVK not executed!");
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
@@ -1465,7 +1518,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instanc
 
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
 
 // Functions for the VK_GGP_stream_descriptor_surface extension:
 
@@ -1476,7 +1529,7 @@ vkCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptor
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
         loader_log(
-            NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
             "vkCreateStreamDescriptorSurfaceGGP: Invalid instance [VUID-vkCreateStreamDescriptorSurfaceGGP-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1496,7 +1549,7 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_ggp_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_GGP_stream_descriptor_surface extension not enabled. vkCreateStreamDescriptorSurfaceGGP not executed!\n");
+                   "VK_GGP_stream_descriptor_surface extension not enabled. vkCreateStreamDescriptorSurfaceGGP not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -1554,7 +1607,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateMetalSurfaceEXT(VkInstance 
                                                                      VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateMetalSurfaceEXT: Invalid instance [VUID-vkCreateMetalSurfaceEXT-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1571,7 +1624,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_metal_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_EXT_metal_surface extension not enabled. vkCreateMetalSurfaceEXT will not be executed.\n");
+                   "VK_EXT_metal_surface extension not enabled. vkCreateMetalSurfaceEXT will not be executed.");
     }
 
     // Next, if so, proceed with the implementation of this function:
@@ -1597,7 +1650,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
             }
         }
     }
-    *pSurface = (VkSurfaceKHR)icd_surface;
+    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
 
 out:
     if (result != VK_SUCCESS && icd_surface != NULL) {
@@ -1617,7 +1670,7 @@ out:
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 
 // This is the trampoline entrypoint for CreateScreenSurfaceQNX
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance instance,
@@ -1626,7 +1679,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateScreenSurfaceQNX(VkInstance
                                                                       VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateScreenSurfaceQNX: Invalid instance [VUID-vkCreateScreenSurfaceQNX-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1645,7 +1698,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance inst
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_screen_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_QNX_screen_surface extension not enabled. vkCreateScreenSurfaceQNX not executed!\n");
+                   "VK_QNX_screen_surface extension not enabled. vkCreateScreenSurfaceQNX not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -1702,7 +1755,7 @@ LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceScreenPresentati
                                                                                              struct _screen_window *window) {
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceScreenPresentationSupportQNX: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -1723,14 +1776,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_screen_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_QNX_screen_surface extension not enabled. vkGetPhysicalDeviceScreenPresentationSupportQNX not executed!\n");
+                   "VK_QNX_screen_surface extension not enabled. vkGetPhysicalDeviceScreenPresentationSupportQNX not executed!");
         return VK_FALSE;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceScreenPresentationSupportQNX) {
         // return VK_FALSE as this driver doesn't support WSI functionality
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceScreenPresentationSupportQNX!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceScreenPresentationSupportQNX!");
         return VK_FALSE;
     }
 
@@ -1738,7 +1791,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceScreenPresentationSup
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
 
 // Functions for the VK_NN_vi_surface extension:
 
@@ -1747,7 +1800,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateViSurfaceNN(VkInstance inst
                                                                  const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateViSurfaceNN: Invalid instance [VUID-vkCreateViSurfaceNN-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -1765,7 +1818,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance,
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (!loader_inst->wsi_vi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_NN_vi_surface extension not enabled. vkCreateViSurfaceNN not executed!\n");
+                   "VK_NN_vi_surface extension not enabled. vkCreateViSurfaceNN not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -1823,7 +1876,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceDisplayPropertie
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceDisplayPropertiesKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -1842,13 +1895,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkGetPhysicalDeviceDisplayPropertiesKHR not executed!\n");
+                   "VK_KHR_display extension not enabled. vkGetPhysicalDeviceDisplayPropertiesKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPropertiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPropertiesKHR!");
         // return 0 for property count as this driver doesn't support WSI functionality
         if (pPropertyCount) {
             *pPropertyCount = 0;
@@ -1864,7 +1917,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceDisplayPlaneProp
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceDisplayPlanePropertiesKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -1883,13 +1936,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkGetPhysicalDeviceDisplayPlanePropertiesKHR not executed!\n");
+                   "VK_KHR_display extension not enabled. vkGetPhysicalDeviceDisplayPlanePropertiesKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPlanePropertiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPlanePropertiesKHR!");
         // return 0 for property count as this driver doesn't support WSI functionality
         if (pPropertyCount) {
             *pPropertyCount = 0;
@@ -1906,7 +1959,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDisplayPlaneSupportedDisplaysK
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDisplayPlaneSupportedDisplaysKHR: Invalid physicalDevice "
                    "[VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -1924,13 +1977,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneSupportedDisplaysKHR(Vk
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkGetDisplayPlaneSupportedDisplaysKHR not executed!\n");
+                   "VK_KHR_display extension not enabled. vkGetDisplayPlaneSupportedDisplaysKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == icd_term->dispatch.GetDisplayPlaneSupportedDisplaysKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device does not export vkGetDisplayPlaneSupportedDisplaysKHR!\n");
+                   "ICD for selected physical device does not export vkGetDisplayPlaneSupportedDisplaysKHR!");
         // return 0 for property count as this driver doesn't support WSI functionality
         if (pDisplayCount) {
             *pDisplayCount = 0;
@@ -1947,7 +2000,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDisplayModePropertiesKHR(VkPhy
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDisplayModePropertiesKHR: Invalid physicalDevice "
                    "[VUID-vkGetDisplayModePropertiesKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -1966,13 +2019,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModePropertiesKHR(VkPhysical
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkGetDisplayModePropertiesKHR not executed!\n");
+                   "VK_KHR_display extension not enabled. vkGetDisplayModePropertiesKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == icd_term->dispatch.GetDisplayModePropertiesKHR) {
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device does not export vkGetDisplayModePropertiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetDisplayModePropertiesKHR!");
         // return 0 for property count as this driver doesn't support WSI functionality
         if (pPropertyCount) {
             *pPropertyCount = 0;
@@ -1990,7 +2043,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDisplayModeKHR(VkPhysicalDe
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateDisplayModeKHR: Invalid physicalDevice "
                    "[VUID-vkCreateDisplayModeKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2009,14 +2062,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayModeKHR(VkPhysicalDevice 
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkCreateDisplayModeKHR not executed!\n");
+                   "VK_KHR_display extension not enabled. vkCreateDisplayModeKHR not executed!");
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
     if (NULL == icd_term->dispatch.CreateDisplayModeKHR) {
         // Can't emulate, so return an appropriate error
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD for selected physical device does not export vkCreateDisplayModeKHR!\n");
+                   "ICD for selected physical device does not export vkCreateDisplayModeKHR!");
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
@@ -2029,7 +2082,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDisplayPlaneCapabilitiesKHR(Vk
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDisplayPlaneCapabilitiesKHR: Invalid physicalDevice "
                    "[VUID-vkGetDisplayPlaneCapabilitiesKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2048,14 +2101,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilitiesKHR(VkPhysi
     struct loader_instance *loader_inst = (struct loader_instance *)icd_term->this_instance;
     if (!loader_inst->wsi_display_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_display extension not enabled. vkGetDisplayPlaneCapabilitiesKHR not executed!\n");
+                   "VK_KHR_display extension not enabled. vkGetDisplayPlaneCapabilitiesKHR not executed!");
         return VK_SUCCESS;
     }
 
     if (NULL == icd_term->dispatch.GetDisplayPlaneCapabilitiesKHR) {
         // Emulate support
         loader_log(loader_inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "ICD for selected physical device does not export vkGetDisplayPlaneCapabilitiesKHR!\n");
+                   "ICD for selected physical device does not export vkGetDisplayPlaneCapabilitiesKHR!");
         if (pCapabilities) {
             memset(pCapabilities, 0, sizeof(VkDisplayPlaneCapabilitiesKHR));
         }
@@ -2071,7 +2124,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateDisplayPlaneSurfaceKHR(VkIn
                                                                             VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateDisplayPlaneSurfaceKHR: Invalid instance [VUID-vkCreateDisplayPlaneSurfaceKHR-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -2090,7 +2143,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
 
     if (!inst->wsi_display_enabled) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkCreateDisplayPlaneSurfaceKHR not executed!\n");
+                   "VK_KHR_surface extension not enabled. vkCreateDisplayPlaneSurfaceKHR not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -2153,7 +2206,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateSharedSwapchainsKHR(VkDevic
                                                                          VkSwapchainKHR *pSwapchains) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateSharedSwapchainsKHR: Invalid device [VUID-vkCreateSharedSwapchainsKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -2167,34 +2220,44 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL != icd_term && NULL != icd_term->dispatch.CreateSharedSwapchainsKHR) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
-        if (NULL != icd_surface->real_icd_surfaces) {
-            if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-                // We found the ICD, and there is an ICD KHR surface
-                // associated with it, so copy the CreateInfo struct
-                // and point it at the ICD's surface.
-                VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
-                if (NULL == pCreateCopy) {
-                    return VK_ERROR_OUT_OF_HOST_MEMORY;
-                }
-                memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
-                for (uint32_t sc = 0; sc < swapchainCount; sc++) {
-                    pCreateCopy[sc].surface = icd_surface->real_icd_surfaces[icd_index];
-                }
-                return icd_term->dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy, pAllocator, pSwapchains);
-            }
-        }
-        return icd_term->dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
+    if (NULL == icd_term || NULL == dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateSharedSwapchainsKHR Terminator: Invalid device handle. This is likely the result of a "
+                   "layer wrapping device handles and failing to unwrap them in all functions. "
+                   "[VUID-vkCreateSharedSwapchainsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
     }
-    return VK_SUCCESS;
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
+                   "vkCreateSharedSwapchainsKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the "
+                   "VK_KHR_display_swapchain extension enabled?");
+        return VK_SUCCESS;
+    }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pCreateInfos->surface;
+    if ((VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+        // We found the ICD, and there is an ICD KHR surface
+        // associated with it, so copy the CreateInfo struct
+        // and point it at the ICD's surface.
+        VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
+        if (NULL == pCreateCopy) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
+        for (uint32_t sc = 0; sc < swapchainCount; sc++) {
+            pCreateCopy[sc].surface = icd_surface->real_icd_surfaces[icd_index];
+        }
+        return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy,
+                                                                                            pAllocator, pSwapchains);
+    }
+    return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos,
+                                                                                        pAllocator, pSwapchains);
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
 vkGetDeviceGroupPresentCapabilitiesKHR(VkDevice device, VkDeviceGroupPresentCapabilitiesKHR *pDeviceGroupPresentCapabilities) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDeviceGroupPresentCapabilitiesKHR: Invalid device "
                    "[VUID-vkGetDeviceGroupPresentCapabilitiesKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2206,7 +2269,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceGroupSurfacePresentModes
                                                                                     VkDeviceGroupPresentModeFlagsKHR *pModes) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDeviceGroupSurfacePresentModesKHR: Invalid device "
                    "[VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2219,15 +2282,25 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(V
     uint32_t icd_index = 0;
     struct loader_device *dev;
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
-    if (NULL != icd_term && NULL != icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
-        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
-            return icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR(device, icd_surface->real_icd_surfaces[icd_index],
-                                                                           pModes);
-        }
-        return icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
+    if (NULL == icd_term || NULL == dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceGroupSurfacePresentModesKHR: Invalid device "
+                   "[VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
     }
-    return VK_SUCCESS;
+    if (NULL == dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR) {
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
+                   "vkGetDeviceGroupSurfacePresentModesKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was either "
+                   "Vulkan 1.1 and VK_KHR_swapchain enabled or both the VK_KHR_device_group and VK_KHR_surface "
+                   "extensions enabled when using Vulkan 1.0?");
+        return VK_SUCCESS;
+    }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
+    if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)(uintptr_t)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+        return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR(
+            device, icd_surface->real_icd_surfaces[icd_index], pModes);
+    }
+    return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice,
@@ -2236,7 +2309,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDevicePresentRectangle
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDevicePresentRectanglesKHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDevicePresentRectanglesKHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2272,7 +2345,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkAcquireNextImage2KHR(VkDevice dev
                                                                     uint32_t *pImageIndex) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkAcquireNextImage2KHR: Invalid device [VUID-vkAcquireNextImage2KHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -2287,7 +2360,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceDisplayPropertie
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceDisplayProperties2KHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceDisplayProperties2KHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2342,7 +2415,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceDisplayPlaneProp
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceDisplayPlaneProperties2KHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2399,7 +2472,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDisplayModeProperties2KHR(VkPh
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDisplayModeProperties2KHR: Invalid physicalDevice "
                    "[VUID-vkGetDisplayModeProperties2KHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2455,7 +2528,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDisplayPlaneCapabilities2KHR(V
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetDisplayPlaneCapabilities2KHR: Invalid physicalDevice "
                    "[VUID-vkGetDisplayPlaneCapabilities2KHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2492,7 +2565,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayPlaneCapabilities2KHR(VkPhys
                                                              pDisplayPlaneInfo->planeIndex, &pCapabilities->capabilities);
 }
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
 
 // This is the trampoline entrypoint for CreateImagePipeSurfaceFUCHSIA
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateImagePipeSurfaceFUCHSIA(VkInstance instance,
@@ -2501,7 +2574,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateImagePipeSurfaceFUCHSIA(VkI
                                                                              VkSurfaceKHR *pSurface) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
     if (NULL == loader_inst) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkCreateImagePipeSurfaceFUCHSIA: Invalid instance [VUID-vkCreateImagePipeSurfaceFUCHSIA-instance-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
@@ -2525,7 +2598,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
     if (!loader_inst->wsi_imagepipe_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_FUCHSIA_imagepipe_surface extension not enabled.  "
-                   "vkCreateImagePipeSurfaceFUCHSIA not executed!\n");
+                   "vkCreateImagePipeSurfaceFUCHSIA not executed!");
         vkRes = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
@@ -2553,7 +2626,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
         }
     }
 
-    *pSurface = (VkSurfaceKHR)(pIcdSurface);
+    *pSurface = (VkSurfaceKHR)(uintptr_t)pIcdSurface;
 
 out:
 
@@ -2581,7 +2654,7 @@ vkGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice, cons
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2599,7 +2672,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
 
     if (!loader_inst->wsi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceCapabilities2KHR not executed!\n");
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceCapabilities2KHR not executed!");
         return VK_SUCCESS;
     }
 
@@ -2672,7 +2745,7 @@ vkGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice, const VkP
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
                    "vkGetPhysicalDeviceSurfaceFormats2KHR: Invalid physicalDevice "
                    "[VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-physicalDevice-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -2691,7 +2764,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
 
     if (!loader_inst->wsi_surface_enabled) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceFormats2KHR not executed!\n");
+                   "VK_KHR_surface extension not enabled. vkGetPhysicalDeviceSurfaceFormats2KHR not executed!");
         return VK_SUCCESS;
     }
 
@@ -2843,7 +2916,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 
     // Functions for the VK_KHR_win32_surface extension:
     if (!strcmp("vkCreateWin32SurfaceKHR", name)) {
@@ -2855,7 +2928,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 
     // Functions for the VK_KHR_wayland_surface extension:
     if (!strcmp("vkCreateWaylandSurfaceKHR", name)) {
@@ -2867,7 +2940,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
+#if defined(VK_USE_PLATFORM_XCB_KHR)
 
     // Functions for the VK_KHR_xcb_surface extension:
     if (!strcmp("vkCreateXcbSurfaceKHR", name)) {
@@ -2879,7 +2952,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
 
     // Functions for the VK_KHR_xlib_surface extension:
     if (!strcmp("vkCreateXlibSurfaceKHR", name)) {
@@ -2891,7 +2964,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
 
     // Functions for the VK_EXT_directfb_surface extension:
     if (!strcmp("vkCreateDirectFBSurfaceEXT", name)) {
@@ -2903,7 +2976,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
     // Functions for the VK_KHR_android_surface extension:
     if (!strcmp("vkCreateAndroidSurfaceKHR", name)) {
@@ -2911,7 +2984,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
 
     // Functions for the VK_OHOS_surface extension:
     if (!strcmp("vkCreateSurfaceOHOS", name)) {
@@ -2920,7 +2993,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
     }
 #endif  // VK_USE_PLATFORM_OHOS
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
 
     // Functions for the VK_MVK_macos_surface extension:
     if (!strcmp("vkCreateMacOSSurfaceMVK", name)) {
@@ -2928,7 +3001,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
-#ifdef VK_USE_PLATFORM_IOS_MVK
+#if defined(VK_USE_PLATFORM_IOS_MVK)
 
     // Functions for the VK_MVK_ios_surface extension:
     if (!strcmp("vkCreateIOSSurfaceMVK", name)) {
@@ -2936,7 +3009,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_GGP
+#if defined(VK_USE_PLATFORM_GGP)
 
     // Functions for the VK_GGP_stream_descriptor_surface extension:
     if (!strcmp("vkCreateStreamDescriptorSurfaceGGP", name)) {
@@ -2944,7 +3017,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_GGP
-#ifdef VK_USE_PLATFORM_FUCHSIA
+#if defined(VK_USE_PLATFORM_FUCHSIA)
 
     // Functions for the VK_FUCHSIA_imagepipe_surface extension:
     if (!strcmp("vkCreateImagePipeSurfaceFUCHSIA", name)) {
@@ -2968,7 +3041,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
 
     // Functions for the VK_QNX_screen_surface extension:
     if (!strcmp("vkCreateScreenSurfaceQNX", name)) {
@@ -2981,7 +3054,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-#ifdef VK_USE_PLATFORM_VI_NN
+#if defined(VK_USE_PLATFORM_VI_NN)
 
     // Functions for the VK_NN_vi_surface extension:
     if (!strcmp("vkCreateViSurfaceNN", name)) {

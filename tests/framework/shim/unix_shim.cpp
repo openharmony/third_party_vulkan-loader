@@ -27,9 +27,15 @@
 
 #include "shim.h"
 
-static PlatformShim platform_shim;
+#include <algorithm>
+
+#if defined(__APPLE__)
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+
+PlatformShim platform_shim;
 extern "C" {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 PlatformShim* get_platform_shim(std::vector<fs::FolderManager>* folders) {
     platform_shim = PlatformShim(folders);
     return &platform_shim;
@@ -42,12 +48,13 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #endif
 
 // Necessary for MacOS function shimming
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #define OPENDIR_FUNC_NAME opendir
 #define READDIR_FUNC_NAME readdir
 #define CLOSEDIR_FUNC_NAME closedir
 #define ACCESS_FUNC_NAME access
 #define FOPEN_FUNC_NAME fopen
+#define DLOPEN_FUNC_NAME dlopen
 #define GETEUID_FUNC_NAME geteuid
 #define GETEGID_FUNC_NAME getegid
 #if defined(HAVE_SECURE_GETENV)
@@ -62,13 +69,16 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #define CLOSEDIR_FUNC_NAME my_closedir
 #define ACCESS_FUNC_NAME my_access
 #define FOPEN_FUNC_NAME my_fopen
+#define DLOPEN_FUNC_NAME my_dlopen
 #define GETEUID_FUNC_NAME my_geteuid
 #define GETEGID_FUNC_NAME my_getegid
+#if !defined(TARGET_OS_IPHONE)
 #if defined(HAVE_SECURE_GETENV)
 #define SECURE_GETENV_FUNC_NAME my_secure_getenv
 #endif
 #if defined(HAVE___SECURE_GETENV)
 #define __SECURE_GETENV_FUNC_NAME my__secure_getenv
+#endif
 #endif
 #endif
 
@@ -77,34 +87,60 @@ using PFN_READDIR = struct dirent* (*)(DIR* dir_stream);
 using PFN_CLOSEDIR = int (*)(DIR* dir_stream);
 using PFN_ACCESS = int (*)(const char* pathname, int mode);
 using PFN_FOPEN = FILE* (*)(const char* filename, const char* mode);
+using PFN_DLOPEN = void* (*)(const char* in_filename, int flags);
 using PFN_GETEUID = uid_t (*)(void);
 using PFN_GETEGID = gid_t (*)(void);
 #if defined(HAVE_SECURE_GETENV) || defined(HAVE___SECURE_GETENV)
 using PFN_SEC_GETENV = char* (*)(const char* name);
 #endif
 
-static PFN_OPENDIR real_opendir = nullptr;
-static PFN_READDIR real_readdir = nullptr;
-static PFN_CLOSEDIR real_closedir = nullptr;
-static PFN_ACCESS real_access = nullptr;
-static PFN_FOPEN real_fopen = nullptr;
-static PFN_GETEUID real_geteuid = nullptr;
-static PFN_GETEGID real_getegid = nullptr;
+#if defined(__APPLE__)
+#define real_opendir opendir
+#define real_readdir readdir
+#define real_closedir closedir
+#define real_access access
+#define real_fopen fopen
+#define real_dlopen dlopen
+#define real_geteuid geteuid
+#define real_getegid getegid
 #if defined(HAVE_SECURE_GETENV)
-static PFN_SEC_GETENV real_secure_getenv = nullptr;
+#define real_secure_getenv secure_getenv
 #endif
 #if defined(HAVE___SECURE_GETENV)
-static PFN_SEC_GETENV real__secure_getenv = nullptr;
+#define real__secure_getenv __secure_getenv
+#endif
+#else
+PFN_OPENDIR real_opendir = nullptr;
+PFN_READDIR real_readdir = nullptr;
+PFN_CLOSEDIR real_closedir = nullptr;
+PFN_ACCESS real_access = nullptr;
+PFN_FOPEN real_fopen = nullptr;
+PFN_DLOPEN real_dlopen = nullptr;
+PFN_GETEUID real_geteuid = nullptr;
+PFN_GETEGID real_getegid = nullptr;
+#if defined(HAVE_SECURE_GETENV)
+PFN_SEC_GETENV real_secure_getenv = nullptr;
+#endif
+#if defined(HAVE___SECURE_GETENV)
+PFN_SEC_GETENV real__secure_getenv = nullptr;
+#endif
 #endif
 
 FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
+#if !defined(__APPLE__)
     if (!real_opendir) real_opendir = (PFN_OPENDIR)dlsym(RTLD_NEXT, "opendir");
-
+#endif
+    if (platform_shim.is_during_destruction) {
+        return real_opendir(path_name);
+    }
     DIR* dir;
     if (platform_shim.is_fake_path(path_name)) {
-        auto fake_path_name = platform_shim.get_fake_path(fs::path(path_name));
-        dir = real_opendir(fake_path_name.c_str());
-        platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, false});
+        auto real_path_name = platform_shim.get_real_path_from_fake_path(fs::path(path_name));
+        dir = real_opendir(real_path_name.c_str());
+        platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, 0, true});
+    } else if (platform_shim.is_known_path(path_name)) {
+        dir = real_opendir(path_name);
+        platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, 0, false});
     } else {
         dir = real_opendir(path_name);
     }
@@ -113,7 +149,12 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
 }
 
 FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
+#if !defined(__APPLE__)
     if (!real_readdir) real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
+#endif
+    if (platform_shim.is_during_destruction) {
+        return real_readdir(dir_stream);
+    }
     auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
                            [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
 
@@ -132,8 +173,11 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
             folder_contents.push_back(dir_entry);
             dirent_filenames.push_back(&dir_entry->d_name[0]);
         }
-        auto real_path = platform_shim.redirection_map.at(it->folder_path);
-        auto filenames = get_folder_contents(platform_shim.folders, real_path.str());
+        auto real_path = it->folder_path;
+        if (it->is_fake_path) {
+            real_path = platform_shim.redirection_map.at(it->folder_path).str();
+        }
+        auto filenames = get_folder_contents(platform_shim.folders, real_path);
 
         // Add the dirent structures in the order they appear in the FolderManager
         // Ignore anything which wasn't in the FolderManager
@@ -151,8 +195,12 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
 }
 
 FRAMEWORK_EXPORT int CLOSEDIR_FUNC_NAME(DIR* dir_stream) {
+#if !defined(__APPLE__)
     if (!real_closedir) real_closedir = (PFN_CLOSEDIR)dlsym(RTLD_NEXT, "closedir");
-
+#endif
+    if (platform_shim.is_during_destruction) {
+        return real_closedir(dir_stream);
+    }
     auto it = std::find_if(platform_shim.dir_entries.begin(), platform_shim.dir_entries.end(),
                            [dir_stream](DirEntry const& entry) { return entry.directory == dir_stream; });
 
@@ -164,24 +212,26 @@ FRAMEWORK_EXPORT int CLOSEDIR_FUNC_NAME(DIR* dir_stream) {
 }
 
 FRAMEWORK_EXPORT int ACCESS_FUNC_NAME(const char* in_pathname, int mode) {
+#if !defined(__APPLE__)
     if (!real_access) real_access = (PFN_ACCESS)dlsym(RTLD_NEXT, "access");
-
+#endif
     fs::path path{in_pathname};
     if (!path.has_parent_path()) {
         return real_access(in_pathname, mode);
     }
 
     if (platform_shim.is_fake_path(path.parent_path())) {
-        fs::path fake_path = platform_shim.get_fake_path(path.parent_path());
-        fake_path /= path.filename();
-        return real_access(fake_path.c_str(), mode);
+        fs::path real_path = platform_shim.get_real_path_from_fake_path(path.parent_path());
+        real_path /= path.filename();
+        return real_access(real_path.c_str(), mode);
     }
     return real_access(in_pathname, mode);
 }
 
 FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode) {
+#if !defined(__APPLE__)
     if (!real_fopen) real_fopen = (PFN_FOPEN)dlsym(RTLD_NEXT, "fopen");
-
+#endif
     fs::path path{in_filename};
     if (!path.has_parent_path()) {
         return real_fopen(in_filename, mode);
@@ -189,8 +239,8 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
 
     FILE* f_ptr;
     if (platform_shim.is_fake_path(path.parent_path())) {
-        auto fake_path = platform_shim.get_fake_path(path.parent_path()) / path.filename();
-        f_ptr = real_fopen(fake_path.c_str(), mode);
+        auto real_path = platform_shim.get_real_path_from_fake_path(path.parent_path()) / path.filename();
+        f_ptr = real_fopen(real_path.c_str(), mode);
     } else {
         f_ptr = real_fopen(in_filename, mode);
     }
@@ -198,9 +248,21 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
     return f_ptr;
 }
 
-FRAMEWORK_EXPORT uid_t GETEUID_FUNC_NAME(void) {
-    if (!real_geteuid) real_geteuid = (PFN_GETEUID)dlsym(RTLD_NEXT, "geteuid");
+FRAMEWORK_EXPORT void* DLOPEN_FUNC_NAME(const char* in_filename, int flags) {
+#if !defined(__APPLE__)
+    if (!real_dlopen) real_dlopen = (PFN_DLOPEN)dlsym(RTLD_NEXT, "dlopen");
+#endif
 
+    if (platform_shim.is_dlopen_redirect_name(in_filename)) {
+        return real_dlopen(platform_shim.dlopen_redirection_map[in_filename].c_str(), flags);
+    }
+    return real_dlopen(in_filename, flags);
+}
+
+FRAMEWORK_EXPORT uid_t GETEUID_FUNC_NAME(void) {
+#if !defined(__APPLE__)
+    if (!real_geteuid) real_geteuid = (PFN_GETEUID)dlsym(RTLD_NEXT, "geteuid");
+#endif
     if (platform_shim.use_fake_elevation) {
         // Root on linux is 0, so force pretending like we're root
         return 0;
@@ -210,8 +272,9 @@ FRAMEWORK_EXPORT uid_t GETEUID_FUNC_NAME(void) {
 }
 
 FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
+#if !defined(__APPLE__)
     if (!real_getegid) real_getegid = (PFN_GETEGID)dlsym(RTLD_NEXT, "getegid");
-
+#endif
     if (platform_shim.use_fake_elevation) {
         // Root on linux is 0, so force pretending like we're root
         return 0;
@@ -220,10 +283,12 @@ FRAMEWORK_EXPORT gid_t GETEGID_FUNC_NAME(void) {
     }
 }
 
+#if !defined(TARGET_OS_IPHONE)
 #if defined(HAVE_SECURE_GETENV)
 FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char* name) {
+#if !defined(__APPLE__)
     if (!real_secure_getenv) real_secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "secure_getenv");
-
+#endif
     if (platform_shim.use_fake_elevation) {
         return NULL;
     } else {
@@ -233,13 +298,39 @@ FRAMEWORK_EXPORT char* SECURE_GETENV_FUNC_NAME(const char* name) {
 #endif
 #if defined(HAVE___SECURE_GETENV)
 FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char* name) {
+#if !defined(__APPLE__)
     if (!real__secure_getenv) real__secure_getenv = (PFN_SEC_GETENV)dlsym(RTLD_NEXT, "__secure_getenv");
+#endif
 
     if (platform_shim.use_fake_elevation) {
         return NULL;
     } else {
         return real__secure_getenv(name);
     }
+}
+#endif
+#endif
+#if defined(__APPLE__)
+FRAMEWORK_EXPORT CFBundleRef my_CFBundleGetMainBundle() {
+    static CFBundleRef global_bundle{};
+    return reinterpret_cast<CFBundleRef>(&global_bundle);
+}
+FRAMEWORK_EXPORT CFURLRef my_CFBundleCopyResourcesDirectoryURL([[maybe_unused]] CFBundleRef bundle) {
+    static CFURLRef global_url{};
+    return reinterpret_cast<CFURLRef>(&global_url);
+}
+FRAMEWORK_EXPORT Boolean my_CFURLGetFileSystemRepresentation([[maybe_unused]] CFURLRef url,
+                                                             [[maybe_unused]] Boolean resolveAgainstBase, UInt8* buffer,
+                                                             CFIndex maxBufLen) {
+    if (!platform_shim.bundle_contents.empty()) {
+        CFIndex copy_len = (CFIndex)platform_shim.bundle_contents.size();
+        if (copy_len > maxBufLen) {
+            copy_len = maxBufLen;
+        }
+        strncpy(reinterpret_cast<char*>(buffer), platform_shim.bundle_contents.c_str(), copy_len);
+        return TRUE;
+    }
+    return FALSE;
 }
 #endif
 
@@ -262,8 +353,10 @@ __attribute__((used)) static Interposer _interpose_opendir MACOS_ATTRIB = {VOIDP
 __attribute__((used)) static Interposer _interpose_closedir MACOS_ATTRIB = {VOIDP_CAST(my_closedir), VOIDP_CAST(closedir)};
 __attribute__((used)) static Interposer _interpose_access MACOS_ATTRIB = {VOIDP_CAST(my_access), VOIDP_CAST(access)};
 __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_CAST(my_fopen), VOIDP_CAST(fopen)};
+__attribute__((used)) static Interposer _interpose_dlopen MACOS_ATTRIB = {VOIDP_CAST(my_dlopen), VOIDP_CAST(dlopen)};
 __attribute__((used)) static Interposer _interpose_euid MACOS_ATTRIB = {VOIDP_CAST(my_geteuid), VOIDP_CAST(geteuid)};
 __attribute__((used)) static Interposer _interpose_egid MACOS_ATTRIB = {VOIDP_CAST(my_getegid), VOIDP_CAST(getegid)};
+#if !defined(TARGET_OS_IPHONE)
 #if defined(HAVE_SECURE_GETENV)
 __attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my_secure_getenv),
                                                                                  VOIDP_CAST(secure_getenv)};
@@ -272,5 +365,13 @@ __attribute__((used)) static Interposer _interpose_secure_getenv MACOS_ATTRIB = 
 __attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB = {VOIDP_CAST(my__secure_getenv),
                                                                                   VOIDP_CAST(__secure_getenv)};
 #endif
+#endif
+__attribute__((used)) static Interposer _interpose_CFBundleGetMainBundle MACOS_ATTRIB = {VOIDP_CAST(my_CFBundleGetMainBundle),
+                                                                                         VOIDP_CAST(CFBundleGetMainBundle)};
+__attribute__((used)) static Interposer _interpose_CFBundleCopyResourcesDirectoryURL MACOS_ATTRIB = {
+    VOIDP_CAST(my_CFBundleCopyResourcesDirectoryURL), VOIDP_CAST(CFBundleCopyResourcesDirectoryURL)};
+__attribute__((used)) static Interposer _interpose_CFURLGetFileSystemRepresentation MACOS_ATTRIB = {
+    VOIDP_CAST(my_CFURLGetFileSystemRepresentation), VOIDP_CAST(CFURLGetFileSystemRepresentation)};
+
 #endif
 }  // extern "C"

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -37,7 +37,6 @@
  * LibraryWrapper - RAII wrapper for a library
  * DispatchableHandle - RAII wrapper for vulkan dispatchable handle objects
  * ostream overload for VkResult - prettifies googletest output
- * VulkanFunctions - loads vulkan functions for tests to use
  * Instance & Device create info helpers
  * operator == overloads for many vulkan structs - more concise tests
  */
@@ -62,11 +61,19 @@
 #include <stdio.h>
 #include <stdint.h>
 
+// Set of platforms with a common set of functionality which is queried throughout the program
+#if defined(__linux__) || defined(__APPLE__) || defined(__Fuchsia__) || defined(__QNX__) || defined(__FreeBSD__) || \
+    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__GNU__)
+#define COMMON_UNIX_PLATFORMS 1
+#else
+#define COMMON_UNIX_PLATFORMS 0
+#endif
+
 #if defined(WIN32)
 #include <direct.h>
 #include <windows.h>
 #include <strsafe.h>
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -95,25 +102,72 @@
 #define FRAMEWORK_EXPORT
 #endif
 
+#include "json_writer.h"
+
+// get_env_var() - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
+//     env-var
+// NOTE: This is only intended for test framework code, all test code MUST use EnvVarWrapper
+std::string get_env_var(std::string const& name, bool report_failure = true);
+
 /*
- * Common Environment Variable operations
- * These operate on the actual environemnt, they are not shims.
- * set_env_var - sets the env-var with `name` to `value`.
- * remove_env_var - unsets the env-var `name`. Different than set_env_var(name, "");
- * get_env_var - returns a std::string of `name`. if report_failure is true, then it will log to stderr that it didn't find the
- *     env-var
+ * Wrapper around Environment Variables with common operations
+ * Since Environment Variables leak between tests, there needs to be RAII code to remove them during test cleanup
+
  */
 
-#if defined(WIN32)
-void set_env_var(std::string const& name, std::string const& value);
-void remove_env_var(std::string const& name);
-std::string get_env_var(std::string const& name, bool report_failure = true);
+// Wrapper to set & remove env-vars automatically
+struct EnvVarWrapper {
+    // Constructor which unsets the env-var
+    EnvVarWrapper(std::string const& name) noexcept : name(name) {
+        initial_value = get_env_var(name, false);
+        remove_env_var();
+    }
+    // Constructor which set the env-var to the specified value
+    EnvVarWrapper(std::string const& name, std::string const& value) noexcept : name(name), cur_value(value) {
+        initial_value = get_env_var(name, false);
+        set_env_var();
+    }
+    ~EnvVarWrapper() noexcept {
+        remove_env_var();
+        if (!initial_value.empty()) {
+            set_new_value(initial_value);
+        }
+    }
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-void set_env_var(std::string const& name, std::string const& value);
-void remove_env_var(std::string const& name);
-std::string get_env_var(std::string const& name, bool report_failure = true);
+    // delete copy operators
+    EnvVarWrapper(const EnvVarWrapper&) = delete;
+    EnvVarWrapper& operator=(const EnvVarWrapper&) = delete;
+
+    void set_new_value(std::string const& value) {
+        cur_value = value;
+        set_env_var();
+    }
+    void add_to_list(std::string const& list_item) {
+        if (!cur_value.empty()) {
+            cur_value += OS_ENV_VAR_LIST_SEPARATOR;
+        }
+        cur_value += list_item;
+        set_env_var();
+    }
+    void remove_value() const { remove_env_var(); }
+    const char* get() const { return name.c_str(); }
+    const char* value() const { return cur_value.c_str(); }
+
+   private:
+    std::string name;
+    std::string cur_value;
+    std::string initial_value;
+
+    void set_env_var();
+    void remove_env_var() const;
+#if defined(WIN32)
+    // Environment variable list separator - not for filesystem paths
+    const char OS_ENV_VAR_LIST_SEPARATOR = ';';
+#elif COMMON_UNIX_PLATFORMS
+    // Environment variable list separator - not for filesystem paths
+    const char OS_ENV_VAR_LIST_SEPARATOR = ':';
 #endif
+};
 
 // Windows specific error handling logic
 #if defined(WIN32)
@@ -126,22 +180,13 @@ void print_error_message(LSTATUS status, const char* function_name, std::string 
 struct ManifestICD;    // forward declaration for FolderManager::write
 struct ManifestLayer;  // forward declaration for FolderManager::write
 
-#ifdef _WIN32
-// Environment variable list separator - not for filesystem paths
-const char OS_ENV_VAR_LIST_SEPARATOR = ';';
-#else
-// Environment variable list separator - not for filesystem paths
-const char OS_ENV_VAR_LIST_SEPARATOR = ':';
-#endif
-
 namespace fs {
 std::string make_native(std::string const&);
 
 struct path {
-   private:
 #if defined(WIN32)
     static const char path_separator = '\\';
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
     static const char path_separator = '/';
 #endif
 
@@ -170,12 +215,12 @@ struct path {
     path operator/(std::string const& in) const;
     path operator/(const char* in) const;
 
-    // accesors
-    path parent_path() const;
-    bool has_parent_path() const;
-    path filename() const;
-    path extension() const;
-    path stem() const;
+    // accessors
+    path parent_path() const;      // Everything before the last path separator, if there is one.
+    bool has_parent_path() const;  // True if the path contains more than just a filename.
+    path filename() const;         // Everything after the last path separator.
+    path extension() const;        // The file extension, if it has one.
+    path stem() const;             // The filename minus the extension.
 
     // modifiers
     path& replace_filename(path const& replacement);
@@ -210,7 +255,11 @@ class FolderManager {
     FolderManager(FolderManager&& other) noexcept;
     FolderManager& operator=(FolderManager&& other) noexcept;
 
+    // Add a manifest to the folder
     path write_manifest(std::string const& name, std::string const& contents);
+
+    // Add an already existing file to the manager, so it will be cleaned up automatically
+    void add_existing_file(std::string const& file_name);
 
     // close file handle, delete file, remove `name` from managed file list.
     void remove(std::string const& name);
@@ -233,17 +282,7 @@ class FolderManager {
 // src - std::string to read from
 // dst - char array to write to
 // size_dst - number of characters in the dst array
-inline void copy_string_to_char_array(std::string const& src, char* dst, size_t size_dst) {
-// Creates a spurious C4996 Warning in VS 2015 - ignore it
-#if defined(WIN32)
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#endif
-    dst[src.copy(dst, size_dst - 1)] = 0;
-#if defined(WIN32)
-#pragma warning(pop)
-#endif
-}
+inline void copy_string_to_char_array(std::string const& src, char* dst, size_t size_dst) { dst[src.copy(dst, size_dst - 1)] = 0; }
 
 #if defined(WIN32)
 // Convert an UTF-16 wstring to an UTF-8 string
@@ -254,7 +293,7 @@ std::wstring widen(const std::string& utf8);
 
 #if defined(WIN32)
 typedef HMODULE loader_platform_dl_handle;
-static loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
+inline loader_platform_dl_handle loader_platform_open_library(const char* lib_path) {
     std::wstring lib_path_utf16 = widen(lib_path);
     // Try loading the library the original way first.
     loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path_utf16.c_str());
@@ -267,7 +306,7 @@ static loader_platform_dl_handle loader_platform_open_library(const char* lib_pa
 }
 inline char* loader_platform_open_library_error(const char* libPath) {
     static char errorMsg[164];
-    (void)snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
+    snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
     return errorMsg;
 }
 inline void loader_platform_close_library(loader_platform_dl_handle library) { FreeLibrary(library); }
@@ -278,24 +317,24 @@ inline void* loader_platform_get_proc_address(loader_platform_dl_handle library,
 }
 inline char* loader_platform_get_proc_address_error(const char* name) {
     static char errorMsg[120];
-    (void)snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
+    snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
     return errorMsg;
 }
 
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif COMMON_UNIX_PLATFORMS
 
 typedef void* loader_platform_dl_handle;
 inline loader_platform_dl_handle loader_platform_open_library(const char* libPath) {
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
 }
-inline const char* loader_platform_open_library_error(const char* libPath) { return dlerror(); }
+inline const char* loader_platform_open_library_error([[maybe_unused]] const char* libPath) { return dlerror(); }
 inline void loader_platform_close_library(loader_platform_dl_handle library) { dlclose(library); }
 inline void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return dlsym(library, name);
 }
-inline const char* loader_platform_get_proc_address_error(const char* name) { return dlerror(); }
+inline const char* loader_platform_get_proc_address_error([[maybe_unused]] const char* name) { return dlerror(); }
 #endif
 
 class FromVoidStarFunc {
@@ -487,9 +526,15 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
             return os << "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
         case (VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR):
             return os << "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
+        case (VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR):
+            return os << "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR";
+        case (VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT):
+            return os << "VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT";
     }
     return os << static_cast<int32_t>(result);
 }
+
+const char* get_platform_wsi_extension([[maybe_unused]] const char* api_selection);
 
 bool string_eq(const char* a, const char* b) noexcept;
 bool string_eq(const char* a, const char* b, size_t len) noexcept;
@@ -540,20 +585,17 @@ struct ManifestVersion {
     BUILDER_VALUE(ManifestVersion, uint32_t, major, 1)
     BUILDER_VALUE(ManifestVersion, uint32_t, minor, 0)
     BUILDER_VALUE(ManifestVersion, uint32_t, patch, 0)
-    ManifestVersion() noexcept {};
-    ManifestVersion(uint32_t major, uint32_t minor, uint32_t patch) noexcept : major(major), minor(minor), patch(patch){};
 
     std::string get_version_str() const noexcept {
-        return std::string("\"file_format_version\": \"") + std::to_string(major) + "." + std::to_string(minor) + "." +
-               std::to_string(patch) + "\",";
+        return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
     }
 };
 
 // ManifestICD builder
 struct ManifestICD {
-    BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, ManifestVersion())
+    BUILDER_VALUE(ManifestICD, ManifestVersion, file_format_version, {})
     BUILDER_VALUE(ManifestICD, uint32_t, api_version, 0)
-    BUILDER_VALUE(ManifestICD, std::string, lib_path, {})
+    BUILDER_VALUE(ManifestICD, fs::path, lib_path, {})
     BUILDER_VALUE(ManifestICD, bool, is_portability_driver, false)
     BUILDER_VALUE(ManifestICD, std::string, library_arch, "")
     std::string get_manifest_str() const;
@@ -575,7 +617,7 @@ struct ManifestLayer {
             BUILDER_VALUE(FunctionOverride, std::string, vk_func, {})
             BUILDER_VALUE(FunctionOverride, std::string, override_name, {})
 
-            std::string get_manifest_str() const { return std::string("\"") + vk_func + "\":\"" + override_name + "\""; }
+            void get_manifest_str(JsonWriter& writer) const { writer.AddKeyedString(vk_func, override_name); }
         };
         struct Extension {
             Extension() noexcept {}
@@ -584,7 +626,7 @@ struct ManifestLayer {
             std::string name;
             uint32_t spec_version = 0;
             std::vector<std::string> entrypoints;
-            std::string get_manifest_str() const;
+            void get_manifest_str(JsonWriter& writer) const;
         };
         BUILDER_VALUE(LayerDescription, std::string, name, {})
         BUILDER_VALUE(LayerDescription, Type, type, Type::INSTANCE)
@@ -604,7 +646,7 @@ struct ManifestLayer {
         BUILDER_VECTOR(LayerDescription, std::string, app_keys, app_key)
         BUILDER_VALUE(LayerDescription, std::string, library_arch, "")
 
-        std::string get_manifest_str() const;
+        void get_manifest_str(JsonWriter& writer) const;
         VkLayerProperties get_layer_properties() const;
     };
     BUILDER_VALUE(ManifestLayer, ManifestVersion, file_format_version, {})
@@ -634,149 +676,7 @@ struct MockQueueFamilyProperties {
     BUILDER_VALUE(MockQueueFamilyProperties, VkQueueFamilyProperties, properties, {})
     BUILDER_VALUE(MockQueueFamilyProperties, bool, support_present, false)
 
-    MockQueueFamilyProperties() {}
-
-    MockQueueFamilyProperties(VkQueueFamilyProperties properties, bool support_present = false)
-        : properties(properties), support_present(support_present) {}
-
     VkQueueFamilyProperties get() const noexcept { return properties; }
-};
-
-struct VulkanFunctions {
-    LibraryWrapper loader;
-
-    // Pre-Instance
-    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
-    PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties = nullptr;
-    PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties = nullptr;
-    PFN_vkEnumerateInstanceVersion vkEnumerateInstanceVersion = nullptr;
-    PFN_vkCreateInstance vkCreateInstance = nullptr;
-
-    // Instance
-    PFN_vkDestroyInstance vkDestroyInstance = nullptr;
-    PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices = nullptr;
-    PFN_vkEnumeratePhysicalDeviceGroups vkEnumeratePhysicalDeviceGroups = nullptr;
-    PFN_vkGetPhysicalDeviceFeatures vkGetPhysicalDeviceFeatures = nullptr;
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 = nullptr;
-    PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceFormatProperties2 vkGetPhysicalDeviceFormatProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceImageFormatProperties vkGetPhysicalDeviceImageFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceImageFormatProperties2 vkGetPhysicalDeviceImageFormatProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceSparseImageFormatProperties vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 vkGetPhysicalDeviceSparseImageFormatProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties = nullptr;
-    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties2 vkGetPhysicalDeviceQueueFamilyProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = nullptr;
-    PFN_vkGetPhysicalDeviceMemoryProperties2 vkGetPhysicalDeviceMemoryProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfacePresentModesKHR vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
-    PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties = nullptr;
-    PFN_vkEnumerateDeviceLayerProperties vkEnumerateDeviceLayerProperties = nullptr;
-    PFN_vkGetPhysicalDeviceExternalBufferProperties vkGetPhysicalDeviceExternalBufferProperties = nullptr;
-    PFN_vkGetPhysicalDeviceExternalFenceProperties vkGetPhysicalDeviceExternalFenceProperties = nullptr;
-    PFN_vkGetPhysicalDeviceExternalSemaphoreProperties vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
-
-    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
-    PFN_vkCreateDevice vkCreateDevice = nullptr;
-    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;
-    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
-
-    // WSI
-    PFN_vkCreateHeadlessSurfaceEXT vkCreateHeadlessSurfaceEXT = nullptr;
-    PFN_vkCreateDisplayPlaneSurfaceKHR vkCreateDisplayPlaneSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR vkGetPhysicalDeviceDisplayPropertiesKHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR vkGetPhysicalDeviceDisplayPlanePropertiesKHR = nullptr;
-    PFN_vkGetDisplayPlaneSupportedDisplaysKHR vkGetDisplayPlaneSupportedDisplaysKHR = nullptr;
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR = nullptr;
-    PFN_vkCreateDisplayModeKHR vkCreateDisplayModeKHR = nullptr;
-    PFN_vkGetDisplayPlaneCapabilitiesKHR vkGetDisplayPlaneCapabilitiesKHR = nullptr;
-    PFN_vkGetPhysicalDevicePresentRectanglesKHR vkGetPhysicalDevicePresentRectanglesKHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayProperties2KHR vkGetPhysicalDeviceDisplayProperties2KHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR vkGetPhysicalDeviceDisplayPlaneProperties2KHR = nullptr;
-    PFN_vkGetDisplayModeProperties2KHR vkGetDisplayModeProperties2KHR = nullptr;
-    PFN_vkGetDisplayPlaneCapabilities2KHR vkGetDisplayPlaneCapabilities2KHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR vkGetPhysicalDeviceSurfaceFormats2KHR = nullptr;
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR = nullptr;
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-    PFN_vkCreateDirectFBSurfaceEXT vkCreateDirectFBSurfaceEXT = nullptr;
-    PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT vkGetPhysicalDeviceDirectFBPresentationSupportEXT = nullptr;
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_FUCHSIA
-    PFN_vkCreateImagePipeSurfaceFUCHSIA vkCreateImagePipeSurfaceFUCHSIA = nullptr;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_GGP
-    PFN_vkCreateStreamDescriptorSurfaceGGP vkCreateStreamDescriptorSurfaceGGP = nullptr;
-#endif  // VK_USE_PLATFORM_GGP
-#ifdef VK_USE_PLATFORM_IOS_MVK
-    PFN_vkCreateIOSSurfaceMVK vkCreateIOSSurfaceMVK = nullptr;
-#endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_MACOS_MVK
-    PFN_vkCreateMacOSSurfaceMVK vkCreateMacOSSurfaceMVK = nullptr;
-#endif  // VK_USE_PLATFORM_MACOS_MVK
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT = nullptr;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
-    PFN_vkCreateScreenSurfaceQNX vkCreateScreenSurfaceQNX = nullptr;
-    PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX vkGetPhysicalDeviceScreenPresentationSupportQNX = nullptr;
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    PFN_vkCreateWaylandSurfaceKHR vkCreateWaylandSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR vkGetPhysicalDeviceWaylandPresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
-    PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR vkGetPhysicalDeviceXcbPresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-    PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-    PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
-
-    // device functions
-    PFN_vkDestroyDevice vkDestroyDevice = nullptr;
-    PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
-
-    VulkanFunctions();
-
-    FromVoidStarFunc load(VkInstance inst, const char* func_name) const {
-        return FromVoidStarFunc(vkGetInstanceProcAddr(inst, func_name));
-    }
-
-    FromVoidStarFunc load(VkDevice device, const char* func_name) const {
-        return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
-    }
-};
-
-struct DeviceFunctions {
-    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
-    PFN_vkDestroyDevice vkDestroyDevice = nullptr;
-    PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
-    PFN_vkCreateCommandPool vkCreateCommandPool = nullptr;
-    PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers = nullptr;
-    PFN_vkDestroyCommandPool vkDestroyCommandPool = nullptr;
-    PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
-    PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR = nullptr;
-
-    DeviceFunctions() = default;
-    DeviceFunctions(const VulkanFunctions& vulkan_functions, VkDevice device);
-
-    FromVoidStarFunc load(VkDevice device, const char* func_name) const {
-        return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
-    }
 };
 
 struct InstanceCreateInfo {
@@ -798,17 +698,24 @@ struct InstanceCreateInfo {
     VkInstanceCreateInfo* get() noexcept;
 
     InstanceCreateInfo& set_api_version(uint32_t major, uint32_t minor, uint32_t patch);
+
+    InstanceCreateInfo& setup_WSI(const char* api_selection = nullptr);
 };
 
 struct DeviceQueueCreateInfo {
+    DeviceQueueCreateInfo();
+    DeviceQueueCreateInfo(const VkDeviceQueueCreateInfo* create_info);
+
     BUILDER_VALUE(DeviceQueueCreateInfo, VkDeviceQueueCreateInfo, queue_create_info, {})
     BUILDER_VECTOR(DeviceQueueCreateInfo, float, priorities, priority)
 
-    DeviceQueueCreateInfo();
     VkDeviceQueueCreateInfo get() noexcept;
 };
 
 struct DeviceCreateInfo {
+    DeviceCreateInfo() = default;
+    DeviceCreateInfo(const VkDeviceCreateInfo* create_info);
+
     BUILDER_VALUE(DeviceCreateInfo, VkDeviceCreateInfo, dev, {})
     BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_extensions, extension)
     BUILDER_VECTOR(DeviceCreateInfo, const char*, enabled_layers, layer)
@@ -844,36 +751,26 @@ inline bool operator!=(const VkExtensionProperties& a, const VkExtensionProperti
 
 struct VulkanFunction {
     std::string name;
-    PFN_vkVoidFunction function;
+    PFN_vkVoidFunction function = nullptr;
 };
 
 template <typename T, size_t U>
 bool check_permutation(std::initializer_list<const char*> expected, std::array<T, U> const& returned) {
     if (expected.size() != returned.size()) return false;
     for (uint32_t i = 0; i < expected.size(); i++) {
-        bool found = false;
-        for (auto& elem : returned) {
-            if (string_eq(*(expected.begin() + i), elem.layerName)) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) return false;
+        auto found = std::find_if(std::begin(returned), std::end(returned),
+                                  [&](T elem) { return string_eq(*(expected.begin() + i), elem.layerName); });
+        if (found == std::end(returned)) return false;
     }
     return true;
 }
-template <typename T, size_t U>
+template <typename T>
 bool check_permutation(std::initializer_list<const char*> expected, std::vector<T> const& returned) {
     if (expected.size() != returned.size()) return false;
     for (uint32_t i = 0; i < expected.size(); i++) {
-        bool found = false;
-        for (auto& elem : returned) {
-            if (string_eq(*(expected.begin() + i), elem.layerName)) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) return false;
+        auto found = std::find_if(std::begin(returned), std::end(returned),
+                                  [&](T elem) { return string_eq(*(expected.begin() + i), elem.layerName); });
+        if (found == std::end(returned)) return false;
     }
     return true;
 }
@@ -887,10 +784,10 @@ inline bool contains(std::vector<VkLayerProperties> const& vec, const char* name
                        [name](VkLayerProperties const& elem) { return string_eq(name, elem.layerName); });
 }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__GNU__)
 
 // find application path + name. Path cannot be longer than 1024, returns NULL if it is greater than that.
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     ssize_t count = readlink("/proc/self/exe", &buffer[0], buffer.size());
@@ -900,13 +797,13 @@ static inline std::string test_platform_executable_path() {
     buffer.resize(count);
     return buffer;
 }
-#elif defined(__APPLE__)  // defined(__linux__)
+#elif defined(__APPLE__)
 #include <libproc.h>
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     pid_t pid = getpid();
-    int ret = proc_pidpath(pid, &buffer[0], buffer.size());
+    int ret = proc_pidpath(pid, &buffer[0], static_cast<uint32_t>(buffer.size()));
     if (ret <= 0) return NULL;
     buffer[ret] = '\0';
     buffer.resize(ret);
@@ -914,7 +811,7 @@ static inline std::string test_platform_executable_path() {
 }
 #elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/sysctl.h>
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     int mib[] = {
         CTL_KERN,
 #if defined(__NetBSD__)
@@ -938,15 +835,15 @@ static inline std::string test_platform_executable_path() {
     return buffer;
 }
 #elif defined(__Fuchsia__) || defined(__OpenBSD__)
-static inline std::string test_platform_executable_path() { return {}; }
-#elif defined(__QNXNTO__)
+inline std::string test_platform_executable_path() { return {}; }
+#elif defined(__QNX__)
 
 #define SYSCONFDIR "/etc"
 
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     int fd = open("/proc/self/exefile", O_RDONLY);
@@ -966,9 +863,9 @@ static inline std::string test_platform_executable_path() {
 
     return buffer;
 }
-#endif  // defined (__QNXNTO__)
+#endif  // defined (__QNX__)
 #if defined(WIN32)
-static inline std::string test_platform_executable_path() {
+inline std::string test_platform_executable_path() {
     std::string buffer;
     buffer.resize(1024);
     DWORD ret = GetModuleFileName(NULL, static_cast<LPSTR>(&buffer[0]), (DWORD)buffer.size());
@@ -978,4 +875,13 @@ static inline std::string test_platform_executable_path() {
     buffer[ret] = '\0';
     return buffer;
 }
+
+inline std::wstring conver_str_to_wstr(std::string const& input) {
+    std::wstring output{};
+    output.resize(input.size());
+    size_t characters_converted = 0;
+    mbstowcs_s(&characters_converted, &output[0], output.size() + 1, input.c_str(), input.size());
+    return output;
+}
+
 #endif
