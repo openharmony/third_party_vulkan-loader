@@ -27,55 +27,55 @@
 
 #include "test_layer.h"
 
-#include "loader/generated/vk_dispatch_table_helper.h"
+#include "vk_dispatch_table_helper.h"
 
 // export the enumeration functions instance|device+layer|extension
-#ifndef TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS
+#if !defined(TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS)
 #define TEST_LAYER_EXPORT_ENUMERATE_FUNCTIONS 0
 #endif
 
 // export test_layer_GetInstanceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_NAMED_GIPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_NAMED_GIPA)
 #define TEST_LAYER_EXPORT_LAYER_NAMED_GIPA 0
 #endif
 
+// export test_override_GetInstanceProcAddr
+#if !defined(TEST_LAYER_EXPORT_OVERRIDE_GIPA)
+#define TEST_LAYER_EXPORT_OVERRIDE_GIPA 0
+#endif
+
 // export vkGetInstanceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_VK_GIPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_VK_GIPA)
 #define TEST_LAYER_EXPORT_LAYER_VK_GIPA 0
 #endif
 
 // export test_layer_GetDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_NAMED_GDPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_NAMED_GDPA)
 #define TEST_LAYER_EXPORT_LAYER_NAMED_GDPA 0
 #endif
 
+// export test_override_GetDeviceProcAddr
+#if !defined(TEST_LAYER_EXPORT_OVERRIDE_GDPA)
+#define TEST_LAYER_EXPORT_OVERRIDE_GDPA 0
+#endif
+
 // export vkGetDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_LAYER_VK_GDPA
+#if !defined(TEST_LAYER_EXPORT_LAYER_VK_GDPA)
 #define TEST_LAYER_EXPORT_LAYER_VK_GDPA 0
 #endif
 
-// export GetInstanceProcAddr
-#ifndef TEST_LAYER_EXPORT_NO_PREFIX_GIPA
-#define TEST_LAYER_EXPORT_NO_PREFIX_GIPA 0
-#endif
-
-// export GetDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_NO_PREFIX_GDPA
-#define TEST_LAYER_EXPORT_NO_PREFIX_GDPA 0
-#endif
-
 // export vk_layerGetPhysicalDeviceProcAddr
-#ifndef TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
+#if !defined(TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR)
 #define TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR 0
 #endif
 
 // export vkNegotiateLoaderLayerInterfaceVersion
-#ifndef LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION
+#if !defined(LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION)
 #define LAYER_EXPORT_NEGOTIATE_LOADER_LAYER_INTERFACE_VERSION 0
 #endif
 
-#ifndef TEST_LAYER_NAME
-#define TEST_LAYER_NAME "VkLayer_LunarG_test_layer"
+#if !defined(TEST_LAYER_NAME)
+#define TEST_LAYER_NAME "VK_LAYER_LunarG_test_layer"
 #endif
 
 TestLayer layer;
@@ -86,6 +86,32 @@ FRAMEWORK_EXPORT TestLayer* reset_layer_func() {
     return new (&layer) TestLayer();
 }
 }
+
+bool IsInstanceExtensionSupported(const char* extension_name) {
+    return layer.instance_extensions.end() !=
+           std::find_if(layer.instance_extensions.begin(), layer.instance_extensions.end(),
+                        [extension_name](Extension const& ext) { return string_eq(&ext.extensionName[0], extension_name); });
+}
+
+bool IsInstanceExtensionEnabled(const char* extension_name) {
+    return layer.enabled_instance_extensions.end() !=
+           std::find_if(layer.enabled_instance_extensions.begin(), layer.enabled_instance_extensions.end(),
+                        [extension_name](Extension const& ext) { return string_eq(&ext.extensionName[0], extension_name); });
+}
+
+bool IsDeviceExtensionAvailable(VkDevice dev, const char* extension_name) {
+    for (auto& device : layer.created_devices) {
+        if ((dev == VK_NULL_HANDLE || device.device_handle == dev) &&
+            device.enabled_extensions.end() !=
+                std::find_if(device.enabled_extensions.begin(), device.enabled_extensions.end(),
+                             [extension_name](Extension const& ext) { return ext.extensionName == extension_name; })) {
+            return true;
+        }
+    }
+    return false;
+}
+
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance_func(VkInstance instance, const char* pName);
 
 VkLayerInstanceCreateInfo* get_chain_info(const VkInstanceCreateInfo* pCreateInfo, VkLayerFunction func) {
     VkLayerInstanceCreateInfo* chain_info = (VkLayerInstanceCreateInfo*)pCreateInfo->pNext;
@@ -105,33 +131,104 @@ VkLayerDeviceCreateInfo* get_chain_info(const VkDeviceCreateInfo* pCreateInfo, V
     return chain_info;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount, VkLayerProperties* pProperties) {
-    return VK_SUCCESS;
-}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceLayerProperties(uint32_t*, VkLayerProperties*) { return VK_SUCCESS; }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
                                                                            VkExtensionProperties* pProperties) {
+    if (pPropertyCount == nullptr) {
+        return VK_INCOMPLETE;
+    }
     if (pLayerName && string_eq(pLayerName, TEST_LAYER_NAME)) {
-        *pPropertyCount = 0;
+        if (pProperties) {
+            if (*pPropertyCount < layer.injected_instance_extensions.size()) {
+                return VK_INCOMPLETE;
+            }
+            for (size_t i = 0; i < layer.injected_instance_extensions.size(); i++) {
+                pProperties[i] = layer.injected_instance_extensions.at(i).get();
+            }
+            *pPropertyCount = static_cast<uint32_t>(layer.injected_instance_extensions.size());
+        } else {
+            *pPropertyCount = static_cast<uint32_t>(layer.injected_instance_extensions.size());
+        }
         return VK_SUCCESS;
     }
-    return layer.instance_dispatch_table.EnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
+
+    uint32_t hardware_prop_count = 0;
+    if (pProperties) {
+        hardware_prop_count = *pPropertyCount - static_cast<uint32_t>(layer.injected_instance_extensions.size());
+    }
+
+    VkResult res =
+        layer.instance_dispatch_table.EnumerateInstanceExtensionProperties(pLayerName, &hardware_prop_count, pProperties);
+    if (res < 0) {
+        return res;
+    }
+
+    if (pProperties == nullptr) {
+        *pPropertyCount = hardware_prop_count + static_cast<uint32_t>(layer.injected_instance_extensions.size());
+    } else {
+        if (hardware_prop_count + layer.injected_instance_extensions.size() > *pPropertyCount) {
+            *pPropertyCount = hardware_prop_count;
+            return VK_INCOMPLETE;
+        }
+        for (size_t i = 0; i < layer.injected_instance_extensions.size(); i++) {
+            pProperties[hardware_prop_count + i] = layer.injected_instance_extensions.at(i).get();
+        }
+        *pPropertyCount = hardware_prop_count + static_cast<uint32_t>(layer.injected_instance_extensions.size());
+    }
+    return res;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                                     VkLayerProperties* pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceLayerProperties(VkPhysicalDevice, uint32_t*, VkLayerProperties*) {
     return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
                                                                          uint32_t* pPropertyCount,
                                                                          VkExtensionProperties* pProperties) {
+    if (pPropertyCount == nullptr) {
+        return VK_INCOMPLETE;
+    }
+
     if (pLayerName && string_eq(pLayerName, TEST_LAYER_NAME)) {
-        *pPropertyCount = 0;
+        if (pProperties) {
+            if (*pPropertyCount < static_cast<uint32_t>(layer.injected_device_extensions.size())) {
+                return VK_INCOMPLETE;
+            }
+            for (size_t i = 0; i < layer.injected_device_extensions.size(); i++) {
+                pProperties[i] = layer.injected_device_extensions.at(i).get();
+            }
+            *pPropertyCount = static_cast<uint32_t>(layer.injected_device_extensions.size());
+        } else {
+            *pPropertyCount = static_cast<uint32_t>(layer.injected_device_extensions.size());
+        }
         return VK_SUCCESS;
     }
-    return layer.instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount,
-                                                                            pProperties);
+
+    uint32_t hardware_prop_count = 0;
+    if (pProperties) {
+        hardware_prop_count = *pPropertyCount - static_cast<uint32_t>(layer.injected_device_extensions.size());
+    }
+
+    VkResult res = layer.instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName,
+                                                                                    &hardware_prop_count, pProperties);
+    if (res < 0) {
+        return res;
+    }
+
+    if (pProperties == nullptr) {
+        *pPropertyCount = hardware_prop_count + static_cast<uint32_t>(layer.injected_device_extensions.size());
+    } else {
+        if (hardware_prop_count + layer.injected_device_extensions.size() > *pPropertyCount) {
+            *pPropertyCount = hardware_prop_count;
+            return VK_INCOMPLETE;
+        }
+        for (size_t i = 0; i < layer.injected_device_extensions.size(); i++) {
+            pProperties[hardware_prop_count + i] = layer.injected_device_extensions.at(i).get();
+        }
+        *pPropertyCount = hardware_prop_count + static_cast<uint32_t>(layer.injected_device_extensions.size());
+    }
+    return res;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
@@ -152,12 +249,40 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
+    if (layer.call_create_device_while_create_device_is_called) {
+        auto* createDeviceCallback = get_chain_info(pCreateInfo, VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK);
+        layer.callback_vkCreateDevice = createDeviceCallback->u.layerDevice.pfnLayerCreateDevice;
+        layer.callback_vkDestroyDevice = createDeviceCallback->u.layerDevice.pfnLayerDestroyDevice;
+    }
+
     // Advance the link info for the next element of the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
     layer.next_vkGetInstanceProcAddr = fpGetInstanceProcAddr;
 
+    bool use_modified_create_info = false;
+    VkInstanceCreateInfo instance_create_info{};
+    VkApplicationInfo application_info{};
+    if (pCreateInfo) {
+        instance_create_info = *pCreateInfo;
+        if (pCreateInfo->pApplicationInfo) {
+            application_info = *pCreateInfo->pApplicationInfo;
+        }
+    }
+
+    // If the test needs to modify the api version, do it before we call down the chain
+    if (layer.alter_api_version != VK_API_VERSION_1_0 && pCreateInfo && pCreateInfo->pApplicationInfo) {
+        application_info.apiVersion = layer.alter_api_version;
+        instance_create_info.pApplicationInfo = &application_info;
+        use_modified_create_info = true;
+    }
+    const VkInstanceCreateInfo* create_info_pointer = use_modified_create_info ? &instance_create_info : pCreateInfo;
+
+    if (layer.clobber_pInstance) {
+        memset(*pInstance, 0, 128);
+    }
+
     // Continue call down the chain
-    VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
+    VkResult result = fpCreateInstance(create_info_pointer, pAllocator, pInstance);
     if (result != VK_SUCCESS) {
         return result;
     }
@@ -171,6 +296,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     // Init layer's dispatch table using GetInstanceProcAddr of
     // next layer in the chain.
     layer_init_instance_dispatch_table(layer.instance_handle, &layer.instance_dispatch_table, fpGetInstanceProcAddr);
+
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        layer.enabled_instance_extensions.push_back({pCreateInfo->ppEnabledExtensionNames[i]});
+    }
 
     if (layer.create_instance_callback) result = layer.create_instance_callback(layer);
 
@@ -192,11 +321,54 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         }
     }
 
+    if (!layer.make_spurious_log_in_create_instance.empty()) {
+        auto* chain = reinterpret_cast<const VkBaseInStructure*>(pCreateInfo->pNext);
+        while (chain) {
+            if (chain->sType == VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT) {
+                auto* debug_messenger = reinterpret_cast<const VkDebugUtilsMessengerCreateInfoEXT*>(chain);
+                VkDebugUtilsMessengerCallbackDataEXT data{};
+                data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
+                data.pMessage = layer.make_spurious_log_in_create_instance.c_str();
+                debug_messenger->pfnUserCallback(VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+                                                 VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &data, debug_messenger->pUserData);
+            }
+
+            chain = chain->pNext;
+        }
+    }
+
+    if (layer.buggy_query_of_vkCreateDevice) {
+        layer.instance_dispatch_table.CreateDevice =
+            reinterpret_cast<PFN_vkCreateDevice>(fpGetInstanceProcAddr(nullptr, "vkCreateDevice"));
+    }
+
+    if (layer.call_create_device_while_create_device_is_called) {
+        uint32_t phys_dev_count = 0;
+        result = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, nullptr);
+        if (result != VK_SUCCESS) {
+            return result;
+        }
+        layer.queried_physical_devices.resize(phys_dev_count);
+        result = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count,
+                                                                        layer.queried_physical_devices.data());
+        if (result != VK_SUCCESS) {
+            return result;
+        }
+    }
+
+    if (layer.check_if_EnumDevExtProps_is_same_as_queried_function) {
+        auto chain_info_EnumDeviceExtProps = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(
+            fpGetInstanceProcAddr(layer.instance_handle, "vkEnumerateDeviceExtensionProperties"));
+        if (chain_info_EnumDeviceExtProps != layer.instance_dispatch_table.EnumerateDeviceExtensionProperties) {
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+    }
+
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL test_override_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
-                                                              const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
+VKAPI_ATTR VkResult VKAPI_CALL test_override_vkCreateInstance(const VkInstanceCreateInfo*, const VkAllocationCallbacks*,
+                                                              VkInstance*) {
     return VK_ERROR_INVALID_SHADER_NV;
 }
 
@@ -215,15 +387,27 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
     PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
     PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
-    PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(layer.instance_handle, "vkCreateDevice");
+    VkInstance instance_to_use = layer.buggy_query_of_vkCreateDevice ? NULL : layer.instance_handle;
+    PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance_to_use, "vkCreateDevice");
     if (fpCreateDevice == NULL) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     layer.next_vkGetDeviceProcAddr = fpGetDeviceProcAddr;
 
+    if (layer.check_if_EnumDevExtProps_is_same_as_queried_function) {
+        auto chain_info_EnumDeviceExtProps = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(
+            fpGetInstanceProcAddr(layer.instance_handle, "vkEnumerateDeviceExtensionProperties"));
+        if (chain_info_EnumDeviceExtProps != layer.instance_dispatch_table.EnumerateDeviceExtensionProperties) {
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+    }
     // Advance the link info for the next element on the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+
+    if (layer.clobber_pDevice) {
+        memset(*pDevice, 0, 128);
+    }
 
     VkResult result = fpCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
     if (result != VK_SUCCESS) {
@@ -234,6 +418,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
     // initialize layer's dispatch table
     layer_init_device_dispatch_table(device.device_handle, &device.dispatch_table, fpGetDeviceProcAddr);
+
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        device.enabled_extensions.push_back({pCreateInfo->ppEnabledExtensionNames[i]});
+    }
 
     for (auto& func : layer.custom_device_interception_functions) {
         auto next_func = layer.next_vkGetDeviceProcAddr(*pDevice, func.name.c_str());
@@ -254,6 +442,20 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
         } else {
             layer.spurious_device_memory_allocations.push_back({allocation, device.device_handle});
         }
+    }
+
+    if (layer.call_create_device_while_create_device_is_called) {
+        PFN_vkGetDeviceProcAddr next_gdpa = layer.next_vkGetDeviceProcAddr;
+        result = layer.callback_vkCreateDevice(
+            instance_to_use, layer.queried_physical_devices.at(layer.physical_device_index_to_use_during_create_device),
+            pCreateInfo, pAllocator, &layer.second_device_created_during_create_device.device_handle, get_instance_func,
+            &next_gdpa);
+        if (result != VK_SUCCESS) {
+            return result;
+        }
+        // initialize the other device's dispatch table
+        layer_init_device_dispatch_table(layer.second_device_created_during_create_device.device_handle,
+                                         &layer.second_device_created_during_create_device.dispatch_table, next_gdpa);
     }
 
     return result;
@@ -369,10 +571,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
             //       underneath us when using this test.
             uint32_t icd_group_count = 0;
             layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, nullptr);
-            std::vector<VkPhysicalDeviceGroupProperties> tmp_vector(icd_group_count);
-            for (uint32_t group = 0; group < icd_group_count; ++group) {
-                tmp_vector[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
-            }
+            std::vector<VkPhysicalDeviceGroupProperties> tmp_vector(icd_group_count,
+                                                                    {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
             layer.instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, &icd_group_count, tmp_vector.data());
             layer.complete_physical_device_groups.clear();
 
@@ -457,13 +657,132 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
         }
     }
 
-    for (auto& created_device : layer.created_devices) {
-        if (created_device.device_handle == device) {
-            created_device.dispatch_table.DestroyDevice(device, pAllocator);
-            break;
-        }
+    if (layer.call_create_device_while_create_device_is_called) {
+        layer.callback_vkDestroyDevice(layer.second_device_created_during_create_device.device_handle, pAllocator,
+                                       layer.second_device_created_during_create_device.dispatch_table.DestroyDevice);
+    }
+
+    auto it = std::find_if(std::begin(layer.created_devices), std::end(layer.created_devices),
+                           [device](const TestLayer::Device& dev) { return device == dev.device_handle; });
+    if (it != std::end(layer.created_devices)) {
+        it->dispatch_table.DestroyDevice(device, pAllocator);
+        layer.created_devices.erase(it);
     }
 }
+
+VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                                   const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                                   const VkAllocationCallbacks* pAllocator,
+                                                                   VkDebugUtilsMessengerEXT* pMessenger) {
+    if (layer.instance_dispatch_table.CreateDebugUtilsMessengerEXT) {
+        return layer.instance_dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+    } else {
+        return VK_SUCCESS;
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+                                                                const VkAllocationCallbacks* pAllocator) {
+    if (layer.instance_dispatch_table.DestroyDebugUtilsMessengerEXT)
+        return layer.instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+}
+
+// Debug utils & debug marker ext stubs
+VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectTagEXT(VkDevice dev, const VkDebugMarkerObjectTagInfoEXT* pTagInfo) {
+    for (const auto& d : layer.created_devices) {
+        if (d.device_handle == dev) {
+            if (d.dispatch_table.DebugMarkerSetObjectTagEXT) {
+                return d.dispatch_table.DebugMarkerSetObjectTagEXT(dev, pTagInfo);
+            } else {
+                return VK_SUCCESS;
+            }
+        }
+    }
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectNameEXT(VkDevice dev, const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
+    for (const auto& d : layer.created_devices) {
+        if (d.device_handle == dev) {
+            if (d.dispatch_table.DebugMarkerSetObjectNameEXT) {
+                return d.dispatch_table.DebugMarkerSetObjectNameEXT(dev, pNameInfo);
+            } else {
+                return VK_SUCCESS;
+            }
+        }
+    }
+    return VK_SUCCESS;
+}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdDebugMarkerBeginEXT(VkCommandBuffer cmd_buf, const VkDebugMarkerMarkerInfoEXT* marker_info) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.CmdDebugMarkerBeginEXT)
+        layer.created_devices[0].dispatch_table.CmdDebugMarkerBeginEXT(cmd_buf, marker_info);
+}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdDebugMarkerEndEXT(VkCommandBuffer cmd_buf) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.CmdDebugMarkerEndEXT)
+        layer.created_devices[0].dispatch_table.CmdDebugMarkerEndEXT(cmd_buf);
+}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdDebugMarkerInsertEXT(VkCommandBuffer cmd_buf, const VkDebugMarkerMarkerInfoEXT* marker_info) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.CmdDebugMarkerInsertEXT)
+        layer.created_devices[0].dispatch_table.CmdDebugMarkerInsertEXT(cmd_buf, marker_info);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectNameEXT(VkDevice dev, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
+    for (const auto& d : layer.created_devices) {
+        if (d.device_handle == dev) {
+            if (d.dispatch_table.SetDebugUtilsObjectNameEXT) {
+                return d.dispatch_table.SetDebugUtilsObjectNameEXT(dev, pNameInfo);
+            } else {
+                return VK_SUCCESS;
+            }
+        }
+    }
+    return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectTagEXT(VkDevice dev, const VkDebugUtilsObjectTagInfoEXT* pTagInfo) {
+    for (const auto& d : layer.created_devices) {
+        if (d.device_handle == dev) {
+            if (d.dispatch_table.SetDebugUtilsObjectTagEXT) {
+                return d.dispatch_table.SetDebugUtilsObjectTagEXT(dev, pTagInfo);
+            } else {
+                return VK_SUCCESS;
+            }
+        }
+    }
+    return VK_SUCCESS;
+}
+VKAPI_ATTR void VKAPI_CALL test_vkQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* label) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.QueueBeginDebugUtilsLabelEXT)
+        layer.created_devices[0].dispatch_table.QueueBeginDebugUtilsLabelEXT(queue, label);
+}
+VKAPI_ATTR void VKAPI_CALL test_vkQueueEndDebugUtilsLabelEXT(VkQueue queue) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.QueueEndDebugUtilsLabelEXT)
+        layer.created_devices[0].dispatch_table.QueueEndDebugUtilsLabelEXT(queue);
+}
+VKAPI_ATTR void VKAPI_CALL test_vkQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* label) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.QueueInsertDebugUtilsLabelEXT)
+        layer.created_devices[0].dispatch_table.QueueInsertDebugUtilsLabelEXT(queue, label);
+}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer cmd_buf, const VkDebugUtilsLabelEXT* label) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.CmdBeginDebugUtilsLabelEXT)
+        layer.created_devices[0].dispatch_table.CmdBeginDebugUtilsLabelEXT(cmd_buf, label);
+}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer cmd_buf) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.CmdEndDebugUtilsLabelEXT)
+        layer.created_devices[0].dispatch_table.CmdEndDebugUtilsLabelEXT(cmd_buf);
+}
+VKAPI_ATTR void VKAPI_CALL test_vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer cmd_buf, const VkDebugUtilsLabelEXT* label) {
+    // Just call the first device -
+    if (layer.created_devices[0].dispatch_table.CmdInsertDebugUtilsLabelEXT)
+        layer.created_devices[0].dispatch_table.CmdInsertDebugUtilsLabelEXT(cmd_buf, label);
+}
+
 // forward declarations needed for trampolines
 #if TEST_LAYER_EXPORT_GET_PHYSICAL_DEVICE_PROC_ADDR
 extern "C" {
@@ -473,9 +792,27 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDev
 
 // trampolines
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName);
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl(VkDevice device, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl([[maybe_unused]] VkDevice device, const char* pName) {
     if (string_eq(pName, "vkGetDeviceProcAddr")) return to_vkVoidFunction(get_device_func);
     if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
+
+    if (IsDeviceExtensionAvailable(device, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+        if (string_eq(pName, "vkDebugMarkerSetObjectTagEXT")) return to_vkVoidFunction(test_vkDebugMarkerSetObjectTagEXT);
+        if (string_eq(pName, "vkDebugMarkerSetObjectNameEXT")) return to_vkVoidFunction(test_vkDebugMarkerSetObjectNameEXT);
+        if (string_eq(pName, "vkCmdDebugMarkerBeginEXT")) return to_vkVoidFunction(test_vkCmdDebugMarkerBeginEXT);
+        if (string_eq(pName, "vkCmdDebugMarkerEndEXT")) return to_vkVoidFunction(test_vkCmdDebugMarkerEndEXT);
+        if (string_eq(pName, "vkCmdDebugMarkerInsertEXT")) return to_vkVoidFunction(test_vkCmdDebugMarkerInsertEXT);
+    }
+    if (IsInstanceExtensionEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+        if (string_eq(pName, "vkSetDebugUtilsObjectNameEXT")) return to_vkVoidFunction(test_vkSetDebugUtilsObjectNameEXT);
+        if (string_eq(pName, "vkSetDebugUtilsObjectTagEXT")) return to_vkVoidFunction(test_vkSetDebugUtilsObjectTagEXT);
+        if (string_eq(pName, "vkQueueBeginDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkQueueBeginDebugUtilsLabelEXT);
+        if (string_eq(pName, "vkQueueEndDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkQueueEndDebugUtilsLabelEXT);
+        if (string_eq(pName, "vkQueueInsertDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkQueueInsertDebugUtilsLabelEXT);
+        if (string_eq(pName, "vkCmdBeginDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkCmdBeginDebugUtilsLabelEXT);
+        if (string_eq(pName, "vkCmdEndDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkCmdEndDebugUtilsLabelEXT);
+        if (string_eq(pName, "vkCmdInsertDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkCmdInsertDebugUtilsLabelEXT);
+    }
 
     for (auto& func : layer.custom_device_interception_functions) {
         if (func.name == pName) {
@@ -492,14 +829,14 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl(VkDevice device, c
     return nullptr;
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func([[maybe_unused]] VkDevice device, const char* pName) {
     PFN_vkVoidFunction ret_dev = get_device_func_impl(device, pName);
     if (ret_dev != nullptr) return ret_dev;
 
     return layer.next_vkGetDeviceProcAddr(device, pName);
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance instance, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func([[maybe_unused]] VkInstance instance, const char* pName) {
     if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
     if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
         return to_vkVoidFunction(test_vkEnumerateDeviceExtensionProperties);
@@ -633,6 +970,9 @@ FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProper
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_layer_GetInstanceProcAddr(VkInstance instance, const char* pName) {
     return get_instance_func(instance, pName);
 }
+#endif
+
+#if TEST_LAYER_EXPORT_OVERRIDE_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_override_vkGetInstanceProcAddr(VkInstance instance,
                                                                                               const char* pName) {
     if (string_eq(pName, "vkCreateInstance")) return to_vkVoidFunction(test_override_vkCreateInstance);
@@ -652,20 +992,14 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_layer_GetDevicePr
 }
 #endif
 
-#if TEST_LAYER_EXPORT_LAYER_VK_GDPA
-FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char* pName) {
+#if TEST_LAYER_EXPORT_OVERRIDE_GDPA
+FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_override_GetDeviceProcAddr(VkDevice device, const char* pName) {
     return get_device_func(device, pName);
 }
 #endif
 
-#if TEST_LAYER_EXPORT_NO_PREFIX_GIPA
-FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* pName) {
-    return get_instance_func(instance, pName);
-}
-#endif
-
-#if TEST_LAYER_EXPORT_NO_PREFIX_GDPA
-FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char* pName) {
+#if TEST_LAYER_EXPORT_LAYER_VK_GDPA
+FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char* pName) {
     return get_device_func(device, pName);
 }
 #endif

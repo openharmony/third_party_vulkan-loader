@@ -1,4 +1,6 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (C) 2018-2019 The ANGLE Project Authors.
+# Copyright (C) 2019-2023 LunarG, Inc.
+# Copyright (c) 2023-2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,14 +20,10 @@ import("//build/ohos.gni")
 ## Build libvulkan.so {{{
 
 config("vulkan_internal_config") {
-  defines = [
-    "VULKAN_NON_CMAKE_BUILD",
-    "VK_ENABLE_BETA_EXTENSIONS",
-  ]
+  defines = [ "VK_ENABLE_BETA_EXTENSIONS" ]
   cflags = [
     "-Wno-conversion",
     "-Wno-extra-semi",
-    "-Wno-implicit-fallthrough",
     "-Wno-sign-compare",
     "-Wno-unreachable-code",
     "-Wno-unused-function",
@@ -46,10 +44,7 @@ config("vulkan_loader_config") {
     "loader",
     "openharmony",
   ]
-  defines = [
-    "API_NAME=\"Vulkan\"",
-    "USE_UNSAFE_FILE_SEARCH=1",
-  ]
+  defines = [ "LOADER_USE_UNSAFE_FILE_SEARCH=1" ]
 }
 
 ohos_shared_library("vulkan_loader") {
@@ -67,16 +62,18 @@ ohos_shared_library("vulkan_loader") {
     "loader/generated/vk_layer_dispatch_table.h",
     "loader/generated/vk_loader_extensions.h",
     "loader/generated/vk_object_types.h",
-    "loader/get_environment.c",
-    "loader/get_environment.h",
     "loader/gpa_helper.c",
     "loader/gpa_helper.h",
     "loader/loader.c",
     "loader/loader.h",
     "loader/loader_common.h",
+    "loader/loader_environment.c",
+    "loader/loader_environment.h",
     "loader/log.c",
     "loader/log.h",
     "loader/phys_dev_ext.c",
+    "loader/settings.c",
+    "loader/settings.h",
     "loader/stack_allocation.h",
     "loader/terminator.c",
     "loader/trampoline.c",

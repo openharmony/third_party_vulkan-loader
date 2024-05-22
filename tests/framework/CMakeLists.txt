@@ -17,7 +17,6 @@
 
 add_library(testing_framework_util STATIC test_util.cpp)
 target_link_libraries(testing_framework_util PUBLIC loader_common_options Vulkan::Headers)
-set_target_properties(testing_framework_util ${LOADER_STANDARD_CXX_PROPERTIES})
 
 if(UNIX OR APPLE)
     target_link_libraries(testing_framework_util PUBLIC ${CMAKE_DL_LIBS})
@@ -30,19 +29,19 @@ endif()
 target_include_directories(testing_framework_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
 if (UNIX)
-    if (TEST_USE_ADDRESS_SANITIZER)
+    if (LOADER_ENABLE_ADDRESS_SANITIZER)
         target_compile_options(testing_framework_util PUBLIC -fsanitize=address)
         target_link_options(testing_framework_util PUBLIC -fsanitize=address)
-        target_compile_options(vulkan PUBLIC -fsanitize=address)
-        target_link_options(vulkan PUBLIC -fsanitize=address)
     endif()
-    if (TEST_USE_THREAD_SANITIZER)
+    if (LOADER_ENABLE_THREAD_SANITIZER)
         target_compile_options(testing_framework_util PUBLIC -fsanitize=thread)
         target_link_options(testing_framework_util PUBLIC -fsanitize=thread)
-        target_compile_options(vulkan PUBLIC -fsanitize=thread)
-        target_link_options(vulkan PUBLIC -fsanitize=thread)
         target_compile_options(gtest PUBLIC -fsanitize=thread)
         target_link_options(gtest PUBLIC -fsanitize=thread)
+    endif()
+    if (LOADER_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER)
+        target_compile_options(testing_framework_util PUBLIC -fsanitize=undefined)
+        target_link_options(testing_framework_util PUBLIC -fsanitize=undefined)
     endif()
 endif()
 
@@ -51,7 +50,6 @@ if (MSVC)
     target_compile_options(testing_framework_util PUBLIC /wd4458)
 endif()
 
-include(CMakeParseArguments)
 function(AddSharedLibrary LIBRARY_NAME)
     set(singleValueArgs DEF_FILE)
     set(multiValueArgs SOURCES DEFINITIONS)
@@ -61,7 +59,6 @@ function(AddSharedLibrary LIBRARY_NAME)
     add_library(${LIBRARY_NAME} SHARED ${PARSED_ARGS_SOURCES})
     target_link_libraries(${LIBRARY_NAME} PUBLIC testing_framework_util)
     target_compile_definitions(${LIBRARY_NAME} PRIVATE ${PARSED_ARGS_DEFINITIONS} VK_NO_PROTOTYPES)
-    set_target_properties(${LIBRARY_NAME} ${LOADER_STANDARD_CXX_PROPERTIES})
     # Windows requires export definitions for these libraries
     if(WIN32)
         target_sources(${LIBRARY_NAME} PRIVATE export_definitions/${PARSED_ARGS_DEF_FILE}.def)
@@ -85,17 +82,20 @@ add_custom_command(
     PRE_BUILD
     COMMAND ${CMAKE_COMMAND} "-E" "copy_if_different" "${CMAKE_CURRENT_BINARY_DIR}/framework_config_$<CONFIG>.h" "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h"
     VERBATIM
-    PRE_BUILD
     DEPENDS  "${CMAKE_CURRENT_BINARY_DIR}/framework_config_$<CONFIG>.h"
     OUTPUT   "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h"
     COMMENT  "creating framework_config.h file ({event: PRE_BUILD}, {filename: framework_config.h })"
     )
 add_custom_target (generate_framework_config DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/framework_config.h")
+add_dependencies (generate_framework_config vulkan)
 add_dependencies (testing_framework_util generate_framework_config)
 
 add_library(testing_dependencies STATIC test_environment.cpp test_environment.h)
 target_link_libraries(testing_dependencies
     PUBLIC gtest Vulkan::Headers testing_framework_util shim-library)
-target_include_directories(testing_dependencies PUBLIC ${CMAKE_BINARY_DIR}/tests/framework)
+target_include_directories(testing_dependencies PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(testing_dependencies PUBLIC "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-set_target_properties(testing_dependencies ${LOADER_STANDARD_CXX_PROPERTIES})
+if (APPLE_STATIC_LOADER)
+    target_compile_definitions(testing_dependencies PUBLIC "APPLE_STATIC_LOADER=1")
+    target_link_libraries(testing_dependencies PUBLIC vulkan)
+endif()

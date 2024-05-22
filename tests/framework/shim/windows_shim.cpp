@@ -26,7 +26,7 @@
  */
 
 // This needs to be defined first, or else we'll get redefinitions on NTSTATUS values
-#ifdef _WIN32
+#if defined(_WIN32)
 #define UMDF_USING_NTSTATUS
 #include <ntstatus.h>
 #endif
@@ -44,7 +44,7 @@ static LibraryWrapper gdi32_dll;
 using PFN_GetSidSubAuthority = PDWORD(__stdcall *)(PSID pSid, DWORD nSubAuthority);
 static PFN_GetSidSubAuthority fpGetSidSubAuthority = GetSidSubAuthority;
 
-PDWORD __stdcall ShimGetSidSubAuthority(PSID pSid, DWORD nSubAuthority) { return &platform_shim.elevation_level; }
+PDWORD __stdcall ShimGetSidSubAuthority(PSID, DWORD) { return &platform_shim.elevation_level; }
 
 static PFN_LoaderEnumAdapters2 fpEnumAdapters2 = nullptr;
 static PFN_LoaderQueryAdapterInfo fpQueryAdapterInfo = nullptr;
@@ -82,11 +82,11 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo *query_info)
     auto *reg_info = reinterpret_cast<LoaderQueryRegistryInfo *>(query_info->private_data);
 
     std::vector<std::wstring> *paths = nullptr;
-    if (reg_info->value_name[6] == L'D') {  // looking for drivers
+    if (wcsstr(reg_info->value_name, L"DriverName") != nullptr) {  // looking for drivers
         paths = &adapter.driver_paths;
-    } else if (reg_info->value_name[6] == L'I') {  // looking for implicit layers
+    } else if (wcsstr(reg_info->value_name, L"ImplicitLayers") != nullptr) {  // looking for implicit layers
         paths = &adapter.implicit_layer_paths;
-    } else if (reg_info->value_name[6] == L'E') {  // looking for explicit layers
+    } else if (wcsstr(reg_info->value_name, L"ExplicitLayers") != nullptr) {  // looking for explicit layers
         paths = &adapter.explicit_layer_paths;
     }
 
@@ -128,14 +128,16 @@ static CONFIGRET(WINAPI *REAL_CM_Get_DevNode_Registry_PropertyW)(DEVINST dnDevIn
 static CONFIGRET(WINAPI *REAL_CM_Get_Sibling)(PDEVINST pdnDevInst, DEVINST dnDevInst, ULONG ulFlags) = CM_Get_Sibling;
 // clang-format on
 
-CONFIGRET WINAPI SHIM_CM_Get_Device_ID_List_SizeW(PULONG pulLen, PCWSTR pszFilter, ULONG ulFlags) {
+CONFIGRET WINAPI SHIM_CM_Get_Device_ID_List_SizeW(PULONG pulLen, [[maybe_unused]] PCWSTR pszFilter,
+                                                  [[maybe_unused]] ULONG ulFlags) {
     if (pulLen == nullptr) {
         return CR_INVALID_POINTER;
     }
     *pulLen = static_cast<ULONG>(platform_shim.CM_device_ID_list.size());
     return CR_SUCCESS;
 }
-CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW(PCWSTR pszFilter, PZZWSTR Buffer, ULONG BufferLen, ULONG ulFlags) {
+CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW([[maybe_unused]] PCWSTR pszFilter, PZZWSTR Buffer, ULONG BufferLen,
+                                             [[maybe_unused]] ULONG ulFlags) {
     if (Buffer != NULL) {
         if (BufferLen < platform_shim.CM_device_ID_list.size()) return CR_BUFFER_SMALL;
         for (size_t i = 0; i < BufferLen; i++) {
@@ -145,22 +147,17 @@ CONFIGRET WINAPI SHIM_CM_Get_Device_ID_ListW(PCWSTR pszFilter, PZZWSTR Buffer, U
     return CR_SUCCESS;
 }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Locate_DevNodeW(PDEVINST pdnDevInst, DEVINSTID_W pDeviceID, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Locate_DevNodeW(PDEVINST, DEVINSTID_W, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_DevNode_Status(PULONG pulStatus, PULONG pulProblemNumber, DEVINST dnDevInst, ULONG ulFlags) {
-    return CR_FAILURE;
-}
+CONFIGRET WINAPI SHIM_CM_Get_DevNode_Status(PULONG, PULONG, DEVINST, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_Device_IDW(DEVINST dnDevInst, PWSTR Buffer, ULONG BufferLen, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Get_Device_IDW(DEVINST, PWSTR, ULONG, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_Child(PDEVINST pdnDevInst, DEVINST dnDevInst, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Get_Child(PDEVINST, DEVINST, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_DevNode_Registry_PropertyW(DEVINST dnDevInst, ULONG ulProperty, PULONG pulRegDataType, PVOID Buffer,
-                                                        PULONG pulLength, ULONG ulFlags) {
-    return CR_FAILURE;
-}
+CONFIGRET WINAPI SHIM_CM_Get_DevNode_Registry_PropertyW(DEVINST, ULONG, PULONG, PVOID, PULONG, ULONG) { return CR_FAILURE; }
 // TODO
-CONFIGRET WINAPI SHIM_CM_Get_Sibling(PDEVINST pdnDevInst, DEVINST dnDevInst, ULONG ulFlags) { return CR_FAILURE; }
+CONFIGRET WINAPI SHIM_CM_Get_Sibling(PDEVINST, DEVINST, ULONG) { return CR_FAILURE; }
 
 static LibraryWrapper dxgi_module;
 typedef HRESULT(APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory);
@@ -171,52 +168,27 @@ HRESULT __stdcall ShimGetDesc1(IDXGIAdapter1 *pAdapter,
                                /* [annotation][out] */
                                _Out_ DXGI_ADAPTER_DESC1 *pDesc) {
     if (pAdapter == nullptr || pDesc == nullptr) return DXGI_ERROR_INVALID_CALL;
-    auto it = platform_shim.dxgi_adapter_map.find(pAdapter);
-    if (it == platform_shim.dxgi_adapter_map.end()) {
-        return DXGI_ERROR_INVALID_CALL;
-    }
-    *pDesc = platform_shim.dxgi_adapters[it->second].desc1;
-    return S_OK;
-}
-ULONG __stdcall ShimIDXGIFactory1Release(IDXGIFactory1 *factory) {
-    if (factory != nullptr) {
-        if (factory->lpVtbl != nullptr) {
-            delete factory->lpVtbl;
+
+    for (const auto &[index, adapter] : platform_shim.dxgi_adapters) {
+        if (&adapter.adapter_instance == pAdapter) {
+            *pDesc = adapter.desc1;
+            return S_OK;
         }
-        delete factory;
     }
-    return S_OK;
+    return DXGI_ERROR_INVALID_CALL;
 }
-ULONG __stdcall ShimIDXGIFactory6Release(IDXGIFactory6 *factory) {
-    if (factory != nullptr) {
-        if (factory->lpVtbl != nullptr) {
-            delete factory->lpVtbl;
-        }
-        delete factory;
-    }
-    return S_OK;
+ULONG __stdcall ShimIDXGIFactory1Release(IDXGIFactory1 *) { return S_OK; }
+ULONG __stdcall ShimIDXGIFactory6Release(IDXGIFactory6 *) { return S_OK; }
+ULONG __stdcall ShimRelease(IDXGIAdapter1 *) { return S_OK; }
+
+IDXGIAdapter1 *setup_and_get_IDXGIAdapter1(DXGIAdapter &adapter) {
+    adapter.adapter_vtbl_instance.GetDesc1 = ShimGetDesc1;
+    adapter.adapter_vtbl_instance.Release = ShimRelease;
+    adapter.adapter_instance.lpVtbl = &adapter.adapter_vtbl_instance;
+    return &adapter.adapter_instance;
 }
 
-ULONG __stdcall ShimRelease(IDXGIAdapter1 *pAdapter) {
-    if (pAdapter != nullptr) {
-        if (pAdapter->lpVtbl != nullptr) {
-            delete pAdapter->lpVtbl;
-        }
-        delete pAdapter;
-    }
-    return S_OK;
-}
-
-IDXGIAdapter1 *create_IDXGIAdapter1() {
-    IDXGIAdapter1Vtbl *vtbl = new IDXGIAdapter1Vtbl();
-    vtbl->GetDesc1 = ShimGetDesc1;
-    vtbl->Release = ShimRelease;
-    IDXGIAdapter1 *adapter = new IDXGIAdapter1();
-    adapter->lpVtbl = vtbl;
-    return adapter;
-}
-
-HRESULT __stdcall ShimEnumAdapters1_1(IDXGIFactory1 *This,
+HRESULT __stdcall ShimEnumAdapters1_1([[maybe_unused]] IDXGIFactory1 *This,
                                       /* [in] */ UINT Adapter,
                                       /* [annotation][out] */
                                       _COM_Outptr_ IDXGIAdapter1 **ppAdapter) {
@@ -224,14 +196,12 @@ HRESULT __stdcall ShimEnumAdapters1_1(IDXGIFactory1 *This,
         return DXGI_ERROR_INVALID_CALL;
     }
     if (ppAdapter != nullptr) {
-        auto *pAdapter = create_IDXGIAdapter1();
-        *ppAdapter = pAdapter;
-        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+        *ppAdapter = setup_and_get_IDXGIAdapter1(platform_shim.dxgi_adapters.at(Adapter));
     }
     return S_OK;
 }
 
-HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
+HRESULT __stdcall ShimEnumAdapters1_6([[maybe_unused]] IDXGIFactory6 *This,
                                       /* [in] */ UINT Adapter,
                                       /* [annotation][out] */
                                       _COM_Outptr_ IDXGIAdapter1 **ppAdapter) {
@@ -239,15 +209,14 @@ HRESULT __stdcall ShimEnumAdapters1_6(IDXGIFactory6 *This,
         return DXGI_ERROR_INVALID_CALL;
     }
     if (ppAdapter != nullptr) {
-        auto *pAdapter = create_IDXGIAdapter1();
-        *ppAdapter = pAdapter;
-        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+        *ppAdapter = setup_and_get_IDXGIAdapter1(platform_shim.dxgi_adapters.at(Adapter));
     }
     return S_OK;
 }
 
-HRESULT __stdcall ShimEnumAdapterByGpuPreference(IDXGIFactory6 *This, _In_ UINT Adapter, _In_ DXGI_GPU_PREFERENCE GpuPreference,
-                                                 _In_ REFIID riid, _COM_Outptr_ void **ppvAdapter) {
+HRESULT __stdcall ShimEnumAdapterByGpuPreference([[maybe_unused]] IDXGIFactory6 *This, _In_ UINT Adapter,
+                                                 [[maybe_unused]] _In_ DXGI_GPU_PREFERENCE GpuPreference,
+                                                 [[maybe_unused]] _In_ REFIID riid, _COM_Outptr_ void **ppvAdapter) {
     if (Adapter >= platform_shim.dxgi_adapters.size()) {
         return DXGI_ERROR_NOT_FOUND;
     }
@@ -256,40 +225,38 @@ HRESULT __stdcall ShimEnumAdapterByGpuPreference(IDXGIFactory6 *This, _In_ UINT 
     assert(GpuPreference == DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_UNSPECIFIED &&
            "Test shim assumes the GpuPreference is unspecified.");
     if (ppvAdapter != nullptr) {
-        auto *pAdapter = create_IDXGIAdapter1();
-        *ppvAdapter = pAdapter;
-        platform_shim.dxgi_adapter_map[pAdapter] = Adapter;
+        *ppvAdapter = setup_and_get_IDXGIAdapter1(platform_shim.dxgi_adapters.at(Adapter));
     }
     return S_OK;
 }
 
-IDXGIFactory1 *create_IDXGIFactory1() {
-    IDXGIFactory1Vtbl *vtbl = new IDXGIFactory1Vtbl();
-    vtbl->EnumAdapters1 = ShimEnumAdapters1_1;
-    vtbl->Release = ShimIDXGIFactory1Release;
-    IDXGIFactory1 *factory = new IDXGIFactory1();
-    factory->lpVtbl = vtbl;
-    return factory;
+static IDXGIFactory1 *get_IDXGIFactory1() {
+    static IDXGIFactory1Vtbl vtbl{};
+    vtbl.EnumAdapters1 = ShimEnumAdapters1_1;
+    vtbl.Release = ShimIDXGIFactory1Release;
+    static IDXGIFactory1 factory{};
+    factory.lpVtbl = &vtbl;
+    return &factory;
 }
 
-IDXGIFactory6 *create_IDXGIFactory6() {
-    IDXGIFactory6Vtbl *vtbl = new IDXGIFactory6Vtbl();
-    vtbl->EnumAdapters1 = ShimEnumAdapters1_6;
-    vtbl->EnumAdapterByGpuPreference = ShimEnumAdapterByGpuPreference;
-    vtbl->Release = ShimIDXGIFactory6Release;
-    IDXGIFactory6 *factory = new IDXGIFactory6();
-    factory->lpVtbl = vtbl;
-    return factory;
+static IDXGIFactory6 *get_IDXGIFactory6() {
+    static IDXGIFactory6Vtbl vtbl{};
+    vtbl.EnumAdapters1 = ShimEnumAdapters1_6;
+    vtbl.EnumAdapterByGpuPreference = ShimEnumAdapterByGpuPreference;
+    vtbl.Release = ShimIDXGIFactory6Release;
+    static IDXGIFactory6 factory{};
+    factory.lpVtbl = &vtbl;
+    return &factory;
 }
 
 HRESULT __stdcall ShimCreateDXGIFactory1(REFIID riid, void **ppFactory) {
     if (riid == IID_IDXGIFactory1) {
-        auto *factory = create_IDXGIFactory1();
+        auto *factory = get_IDXGIFactory1();
         *ppFactory = factory;
         return S_OK;
     }
     if (riid == IID_IDXGIFactory6) {
-        auto *factory = create_IDXGIFactory6();
+        auto *factory = get_IDXGIFactory6();
         *ppFactory = factory;
         return S_OK;
     }
@@ -310,13 +277,15 @@ static PFN_RegEnumValueA fpRegEnumValueA = RegEnumValueA;
 using PFN_RegCloseKey = LSTATUS(__stdcall *)(HKEY hKey);
 static PFN_RegCloseKey fpRegCloseKey = RegCloseKey;
 
-LSTATUS __stdcall ShimRegOpenKeyExA(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult) {
+LSTATUS __stdcall ShimRegOpenKeyExA(HKEY hKey, LPCSTR lpSubKey, [[maybe_unused]] DWORD ulOptions,
+                                    [[maybe_unused]] REGSAM samDesired, PHKEY phkResult) {
     if (HKEY_LOCAL_MACHINE != hKey && HKEY_CURRENT_USER != hKey) return ERROR_BADKEY;
     std::string hive = "";
     if (HKEY_LOCAL_MACHINE == hKey)
         hive = "HKEY_LOCAL_MACHINE";
     else if (HKEY_CURRENT_USER == hKey)
         hive = "HKEY_CURRENT_USER";
+    if (hive == "") return ERROR_ACCESS_DENIED;
 
     platform_shim.created_keys.emplace_back(platform_shim.created_key_count++, hive + "\\" + lpSubKey);
     *phkResult = platform_shim.created_keys.back().get();
@@ -331,24 +300,22 @@ const std::string *get_path_of_created_key(HKEY hKey) {
     return nullptr;
 }
 std::vector<RegistryEntry> *get_registry_vector(std::string const &path) {
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\Drivers") return &platform_shim.hkey_local_machine_drivers;
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers")
-        return &platform_shim.hkey_local_machine_explicit_layers;
-    if (path == "HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers")
-        return &platform_shim.hkey_local_machine_implicit_layers;
-    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\ExplicitLayers")
-        return &platform_shim.hkey_current_user_explicit_layers;
-    if (path == "HKEY_CURRENT_USER\\SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers")
-        return &platform_shim.hkey_current_user_implicit_layers;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_drivers;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_ELAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_explicit_layers;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_ILAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_implicit_layers;
+    if (path == "HKEY_CURRENT_USER\\" VK_ELAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_current_user_explicit_layers;
+    if (path == "HKEY_CURRENT_USER\\" VK_ILAYERS_INFO_REGISTRY_LOC) return &platform_shim.hkey_current_user_implicit_layers;
+    if (path == "HKEY_LOCAL_MACHINE\\" VK_SETTINGS_INFO_REGISTRY_LOC) return &platform_shim.hkey_local_machine_settings;
+    if (path == "HKEY_CURRENT_USER\\" VK_SETTINGS_INFO_REGISTRY_LOC) return &platform_shim.hkey_current_user_settings;
     return nullptr;
 }
-LSTATUS __stdcall ShimRegQueryValueExA(HKEY hKey, LPCSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData,
-                                       LPDWORD lpcbData) {
+LSTATUS __stdcall ShimRegQueryValueExA(HKEY, LPCSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD) {
     // TODO:
     return ERROR_SUCCESS;
 }
-LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName, LPDWORD lpReserved,
-                                    LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData) {
+LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName,
+                                    [[maybe_unused]] LPDWORD lpReserved, [[maybe_unused]] LPDWORD lpType, LPBYTE lpData,
+                                    LPDWORD lpcbData) {
     const std::string *path = get_path_of_created_key(hKey);
     if (path == nullptr) return ERROR_NO_MORE_ITEMS;
 
@@ -399,7 +366,12 @@ LONG WINAPI ShimGetPackagesByPackageFamily(_In_ PCWSTR packageFamilyName, _Inout
         *bufferLength = ARRAYSIZE(package_full_name);
         if (too_small) return ERROR_INSUFFICIENT_BUFFER;
 
-        wcscpy(buffer, package_full_name);
+        for (size_t i = 0; i < sizeof(package_full_name) / sizeof(wchar_t); i++) {
+            if (i >= *bufferLength) {
+                break;
+            }
+            buffer[i] = package_full_name[i];
+        }
         *packageFullNames = buffer;
         return 0;
     }
@@ -420,7 +392,12 @@ LONG WINAPI ShimGetPackagePathByFullName(_In_ PCWSTR packageFullName, _Inout_ UI
         *pathLength = static_cast<UINT32>(platform_shim.app_package_path.size() + 1);
         return ERROR_INSUFFICIENT_BUFFER;
     }
-    wcscpy(path, platform_shim.app_package_path.c_str());
+    for (size_t i = 0; i < platform_shim.app_package_path.length(); i++) {
+        if (i >= *pathLength) {
+            break;
+        }
+        path[i] = platform_shim.app_package_path.c_str()[i];
+    }
     return 0;
 }
 
@@ -505,7 +482,7 @@ void DetachFunctions() {
     DetourTransactionCommit();
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved) {
+BOOL WINAPI DllMain([[maybe_unused]] HINSTANCE hinst, DWORD dwReason, [[maybe_unused]] LPVOID reserved) {
     if (DetourIsHelperProcess()) {
         return TRUE;
     }
