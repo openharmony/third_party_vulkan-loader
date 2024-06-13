@@ -3,8 +3,8 @@
         "Name": "Vulkan-Loader",
         "License": "Apache-2.0",
         "License File": "LICENSE",
-        "Version Number": "v1.3.231",
-        "Owner": "liuzhiyuan31@huawei.com",
+        "Version Number": "v1.3.275",
+        "Owner": "wangxutao5@huawei.com",
         "Upstream URL": "https://github.com/KhronosGroup/Vulkan-Loader.git",
         "Description": "This project provides the Vulkan ICD desktop loader for Windows, Linux, MacOS, and OpenHarmony."
     }
