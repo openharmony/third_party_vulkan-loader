@@ -17,7 +17,8 @@
     "ram": "10000KB",
     "deps": {
       "components": [
-        "hilog"
+        "hilog",
+        "init"
       ],
       "third_party": [
         "vulkan-headers"
