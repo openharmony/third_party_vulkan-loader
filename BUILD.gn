@@ -33,7 +33,7 @@ config("vulkan_internal_config") {
   ldflags = [ "-Wl,-Bsymbolic" ]
 
   defines += [
-    "SYSCONFDIR=\"/system/etc:/system/etc/vulkan/swapchain:/vendor/etc\"",
+    "SYSCONFDIR=\"/system/etc:/vendor/etc\"",
     "VK_USE_PLATFORM_OHOS",
   ]
 }
