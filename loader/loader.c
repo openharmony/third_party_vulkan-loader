@@ -3016,6 +3016,32 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     } else {
         home_data_dir = xdg_data_home;
     }
+
+#if defined(__OHOS__)
+    char *debug_layer_name = loader_secure_getenv("debug.graphic.debug_layer", inst); // squid squidsubcapture
+    char *debug_hap_name = loader_secure_getenv("debug.graphic.debug_hap", inst);
+    char *debug_layer_json_path = NULL;
+
+    bool currentProcessEnableDebugLayer = false;
+    if(NULL != debug_hap_name && '\0' != debug_hap_name[0] && NULL != debug_layer_name && '\0' != debug_layer_name[0]){
+        currentProcessEnableDebugLayer = true;
+        debug_layer_json_path = loader_secure_getenv("debug.graphic.vklayer_json_path",inst);
+        if (NULL == debug_layer_json_path || '\0' == debug_layer_json_path[0]){
+            const char default_json_path[] = "/data/storage/el2/base/haps/entry/files/";
+            const char json_suffix[] = ".json";
+            size_t debug_layer_json_path_len = strlen(default_json_path) + sizeof(debug_layer_name) + sizeof(json_suffix) +1;
+            debug_layer_json_path = loader_instance_heap_calloc(inst,debug_layer_json_path_len,VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if(debug_layer_json_path == NULL){
+                vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+            strncpy(debug_layer_json_path,default_json_path,debug_layer_json_path_len);
+            strncat(debug_layer_json_path,debug_layer_name,debug_layer_json_path_len);
+            strncat(debug_layer_json_path,json_suffix,debug_layer_json_path_len);
+        }
+    }
+#endif
+
 #else
 #warning read_data_files_in_search_paths unsupported platform
 #endif
@@ -3108,6 +3134,12 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
                 search_path_size += determine_data_file_path_size(home_data_dir, rel_size);
             }
             search_path_size += determine_data_file_path_size(xdg_data_dirs, rel_size);
+#if defined (__OHOS__)
+            if(currentProcessEnableDebugLayer) {
+                search_path_size += determine_data_file_path_size(debug_layer_json_path, rel_size);
+            }
+            search_path_size += determine_data_file_path_size("/system/etc/vulkan/swapchain", rel_size);
+#endif
         }
 #else
 #warning read_data_files_in_search_paths unsupported platform
@@ -3182,6 +3214,12 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
                 copy_data_file_info(home_data_dir, relative_location, rel_size, &cur_path_ptr);
             }
             copy_data_file_info(xdg_data_dirs, relative_location, rel_size, &cur_path_ptr);
+#if defined (__OHOS__)
+            if(currentProcessEnableDebugLayer){
+                copy_data_file_info(debug_layer_json_path,relative_location,rel_size,&cur_path_ptr);
+            }
+            copy_data_file_info("/system/etc/vulkan/swapchain/",relative_location,rel_size,&cur_path_ptr);
+#endif
         }
 
         // Remove the last path separator
@@ -3287,6 +3325,12 @@ out:
     loader_free_getenv(home, inst);
     loader_instance_heap_free(inst, default_data_home);
     loader_instance_heap_free(inst, default_config_home);
+#elif defined(__OHOS__)
+    if(currentProcessEnableDebugLayer){
+        loader_free_getenv(debug_layer_json_path, inst);
+    }
+    loader_free_getenv(debug_layer_name, inst);
+    loader_free_getenv(debug_hap_name, inst); 
 #else
 #warning read_data_files_in_search_paths unsupported platform
 #endif
