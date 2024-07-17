@@ -100,8 +100,8 @@ ohos_shared_library("vulkan_loader") {
   output_name = "vulkan"
   output_extension = "so"
 
-  part_name = "graphic_2d"
-  subsystem_name = "graphic"
+  part_name = "vulkan-loader"
+  subsystem_name = "thirdparty"
 
   license_file = "//third_party/vulkan-loader/LICENSE.txt"
 }
