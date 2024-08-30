@@ -48,6 +48,7 @@ config("vulkan_loader_config") {
 }
 
 ohos_shared_library("vulkan_loader") {
+  branch_protector_ret = "pac_ret"
   sources = [
     "loader/adapters.h",
     "loader/allocation.c",
