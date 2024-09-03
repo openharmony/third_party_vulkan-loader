@@ -96,7 +96,6 @@ ohos_shared_library("vulkan_loader") {
   ]
   public_external_deps = [ "vulkan-headers:vulkan_headers" ]
 
-  innerapi_tags = [ "platformsdk" ]
   output_name = "vulkan"
   output_extension = "so"
 
