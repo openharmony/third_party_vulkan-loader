@@ -61,6 +61,71 @@ Vulkan Layer属于增强Vulkan开发环境的扩展功能，可以由开发人�
 
 在OpenHarmony上，Vulkan-Loader通过读取指定路径下的Layer的**json清单文件**加载Vulkan Layer。
 
+### user mode下加载自定义layer使用指南
+1. layer对应json文件和so文件放置
+    1. json文件放置位置：      entry\src\main\resources\rawfile\layerName.json
+    2. so文件放置位置：        entry\libs\arm64-v8a\libLayerName.so
+
+2. json文件指定so文件位置
+    引入包管理后，json文件中的library_path支持使用相对路径，即将library_path修改为   libLayerName.so
+    同时，兼容现有的library_path写绝对路径的方式，即library_path为    /data/storage/el1/bundle/lib/arm64/libLayerName.so
+
+3. 拷贝json文件至沙箱路径
+    由于当前loader无法直接从hap包中获取rawfile路径下文件，因此需要hap工程手动复制json文件到沙箱中
+    在entry\src\main\ets\pages\Index.ets文件中引入@ohos.file.fs， 并在aboutToAppear() 中写入复制方法，如下：
+
+    ``` Java
+    // 在Index.ets文件中
+    import fs from '@ohos.file.fs';
+    // ......
+    aboutToAppear(): void { // Copy layerName.json to hap sandbox
+        let path = getContext(this).filesDir;
+        if (!fs.accessSync(path)) {
+            fs.mkdirSync(path);
+        }
+
+        buffer = getContext(this).resourceManager.getRawFileContentSync('layerName.json');
+        file = fs.openSync(path + '/layerName.json', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+        fs.writeSync(file.fd, buffer.buffer);
+    }
+    ```
+4. 设置环境变量
+    开启时设置环境变量
+    hdc shell param set debug.graphic.debug_layer layerName     (应与json的名字保持一致:xxxxx.json)
+    hdc shell param set debug.graphic.debug_hap hapName         (应于hap包名保持一致)
+
+    关闭时清空两个环境变量
+    hdc shell param set debug.graphic.debug_layer '' (设置成空字符)
+    hdc shell param set debug.graphic.debug_hap '' (设置成空字符)
+5. 异常排查方法
+    1. 检查json文件位置是否正常
+        hap工程路径：    \entry\src\main\resources\rawfile\layerName.json
+        hdc shell路径：   /data/app/el2/100/base/{your_pakage_name}/file/layerName.json
+        应用视角下json文件的路径：    /data/storage/el2/base/haps/entry/files/layerName.json
+
+    2. 检查so文件位置是否正常
+        hap工程路径:        \entry\libs\arm64-v8a\libLayerName.so
+        hdc shell路径：    /data/app/el1/bundle/public/{your_pakage_name}/libs/arm64/libLayerName.so
+        应用视角下json文件的路径：    /data/storage/el1/bundle/libs/arm64/libLayerName.so
+    3. 抓取异常日志
+        ```
+        hdc shell
+        hilog -b X
+        hilog -b D -D D001405
+        hilog |grep -i VulkanLoader
+        ```
+6. 进入应用视角
+    在调试过程中，如果权限不对或文件不存在，开发者需要从调试进程视角切换为应用视角，以便直观分析权限及文件目录问题。视角切换命令如下：
+    ```
+    hdc shell                         // 进入shell
+    ps -ef|grep [hapName]             // 通过ps命令找到对应应用的pid
+    nsenter -t [hapPid] -m /bin/sh    // 通过上一步找到的应用pid进入对应应用的沙箱环境中
+    hdc shell                         // 进入shell
+    ps -ef|grep [hapName]             // 通过ps命令找到对应应用的pid
+    nsenter -t [hapPid] -m /bin/sh    // 通过上一步找到的应用pid进入对应应用的沙箱环境中
+    ```
+    执行完成后，即切换到了应用视角，该视角下的目录路径为应用沙箱路径，可以去排查沙箱路径相关问题。
+
 ### 指定的扫描路径
 
 ```

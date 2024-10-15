@@ -3023,7 +3023,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     char *debug_layer_json_path = NULL;
 
     bool currentProcessEnableDebugLayer = false;
-    if(NULL != debug_hap_name && '\0' != debug_hap_name[0] && NULL != debug_layer_name && '\0' != debug_layer_name[0]){
+    if (NULL != debug_layer_name && '\0' != debug_layer_name[0] && InitBundleInfo(debug_hap_name)) {
         currentProcessEnableDebugLayer = true;
         debug_layer_json_path = loader_secure_getenv("debug.graphic.vklayer_json_path",inst);
         if (NULL == debug_layer_json_path || '\0' == debug_layer_json_path[0]){
@@ -3039,6 +3039,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
             strncat(debug_layer_json_path,debug_layer_name,debug_layer_json_path_len);
             strncat(debug_layer_json_path,json_suffix,debug_layer_json_path_len);
         }
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "OHOS:: debug_layer_json_path: %s", debug_layer_json_path);
     }
 #endif
 
@@ -4151,13 +4152,67 @@ struct loader_instance *loader_get_instance(const VkInstance instance) {
 }
 
 loader_platform_dl_handle loader_open_layer_file(const struct loader_instance *inst, struct loader_layer_properties *prop) {
-    if ((prop->lib_handle = loader_platform_open_library(prop->lib_name)) == NULL) {
+    char* libPath = prop->lib_name;
+#if defined(__OHOS__)
+    char *debug_layer_name = loader_secure_getenv("debug.graphic.debug_layer", inst);
+    char *debug_hap_name = loader_secure_getenv("debug.graphic.debug_hap", inst);
+    bool isDebugLayer = false;
+    char* debugLayerLibPath = NULL;
+    if (NULL != debug_layer_name && '\0' != debug_layer_name[0] && InitBundleInfo(debug_hap_name)) {
+        const char lib_prefix[] = "lib";
+        const char so_suffix[] = ".so";
+        size_t totalLen = strlen(debug_layer_name) + strlen(lib_prefix) + strlen(so_suffix) + 1;
+        char* layerSoName = loader_instance_heap_calloc(inst, totalLen, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (layerSoName == NULL) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0, "malloc layerSoName fail");
+            goto mallocErr;
+        }
+        strncpy(layerSoName, lib_prefix, totalLen);
+        strncat(layerSoName, debug_layer_name, totalLen);
+        strncat(layerSoName, so_suffix, totalLen);
+        if (strcmp(layerSoName, libPath) == 0) {
+            isDebugLayer = true;
+            debugLayerLibPath = GetDebugLayerLibPath(inst, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if(debugLayerLibPath == NULL) {
+                loader_instance_heap_free(inst, layerSoName);
+                isDebugLayer = false;
+                goto mallocErr;
+            }
+            size_t totalLength = strlen(libPath) + strlen(debugLayerLibPath) + 1;
+            libPath = loader_instance_heap_calloc(inst, totalLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (libPath == NULL) {
+                loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0, "malloc libPath fail");
+                loader_instance_heap_free(inst, layerSoName);
+                loader_instance_heap_free(inst, debugLayerLibPath);
+                libPath = prop->lib_name;
+                isDebugLayer = false;
+                goto mallocErr;
+            }
+            strncpy(libPath, debugLayerLibPath, totalLength);
+            strncat(libPath, prop->lib_name, totalLength);
+        } else {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0, "layerSoName != libPath : %s != %s",
+                layerSoName, libPath);
+        }
+        loader_instance_heap_free(inst, layerSoName);
+    }
+mallocErr:
+    loader_free_getenv(debug_layer_name, inst);
+    loader_free_getenv(debug_hap_name, inst);
+#endif
+    loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_LAYER_BIT, 0, "try to open libPath: %s", libPath);
+    if ((prop->lib_handle = loader_platform_open_library(libPath)) == NULL) {
         loader_handle_load_library_error(inst, prop->lib_name, &prop->lib_status);
     } else {
         prop->lib_status = LOADER_LAYER_LIB_SUCCESS_LOADED;
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Loading layer library %s", prop->lib_name);
     }
-
+#if defined(__OHOS__)
+    if (isDebugLayer) {
+        loader_instance_heap_free(inst, debugLayerLibPath);
+        loader_instance_heap_free(inst, libPath);
+    }
+#endif
     return prop->lib_handle;
 }
 

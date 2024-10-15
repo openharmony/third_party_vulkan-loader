@@ -17,6 +17,10 @@
     "ram": "10000KB",
     "deps": {
       "components": [
+        "bundle_framework",
+        "c_utils",
+        "samgr",
+        "ipc",
         "hilog",
         "init"
       ],
