@@ -15,6 +15,12 @@
 
 import("//build/ohos.gni")
 
+group("vulkan_loader_test") {
+  testonly = true
+
+  public_deps = [ "openharmony/test:test" ]
+}
+
 # Vulkan loader build options
 
 ## Build libvulkan.so {{{
@@ -30,6 +36,7 @@ config("vulkan_internal_config") {
     "-Wno-unused-variable",
     "-fPIC",
   ]
+  cflags_cc = [ "-std=c++17" ]
   ldflags = [ "-Wl,-Bsymbolic" ]
 
   defines += [
@@ -86,13 +93,21 @@ ohos_shared_library("vulkan_loader") {
     "loader/vk_loader_platform.h",
     "loader/wsi.c",
     "loader/wsi.h",
+    "openharmony/bundle_mgr_helper/vk_bundle_mgr_helper.cpp",
+    "openharmony/bundle_mgr_helper/vk_bundle_mgr_helper.h",
+    "openharmony/loader_hilog.h",
   ]
 
   configs = [ ":vulkan_internal_config" ]
   public_configs = [ ":vulkan_loader_config" ]
   external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
+    "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
   public_external_deps = [ "vulkan-headers:vulkan_headers" ]
 

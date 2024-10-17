@@ -31,6 +31,7 @@
 
 #include "loader_common.h"
 #include "cJSON.h"
+#include "bundle_mgr_helper/vk_bundle_mgr_helper.h"
 
 // Declare the once_init variable
 LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(once_init)
