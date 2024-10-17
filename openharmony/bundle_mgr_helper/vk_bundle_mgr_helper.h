@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef VK_BUNDLE_MGR_HELPER_H
+#define VK_BUNDLE_MGR_HELPER_H
+
 #include "vulkan/vulkan_core.h"
 #ifdef __cplusplus
 #include <singleton.h>
@@ -61,3 +64,4 @@ private:
 }
 }
 #endif // __cplusplus
+#endif

@@ -21,7 +21,8 @@
 #define EOK 0
 
 extern "C" {
-    void *loader_instance_heap_calloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope allocation_scope);
+    void *loader_instance_heap_calloc(const struct loader_instance *instance,
+                                      size_t size, VkSystemAllocationScope allocation_scope);
 }
 constexpr const char *DEBUG_SANDBOX_DIR = "/data/storage/el1/bundle/";
 
