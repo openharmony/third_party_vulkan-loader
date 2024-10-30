@@ -74,6 +74,10 @@
 // Generated file containing all the extension data
 #include "vk_loader_extensions.c"
 
+#if defined(__OHOS__)
+#define IGRAPHICS_CONFG_DIR "/system/etc/vulkan/igraphics"
+#endif
+
 struct loader_struct loader = {0};
 
 struct activated_layer_info {
@@ -3121,6 +3125,11 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 #if defined(__APPLE__)
             search_path_size += MAXPATHLEN;
 #endif
+
+#if defined (__OHOS__)
+            search_path_size += determine_data_file_path_size(IGRAPHICS_CONFG_DIR, rel_size);
+#endif
+
             // Only add the home folders if defined
             if (NULL != home_config_dir) {
                 search_path_size += determine_data_file_path_size(home_config_dir, rel_size);
@@ -3199,6 +3208,10 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
                 }
             }
 #endif  // __APPLE__
+
+#if defined (__OHOS__)
+            copy_data_file_info(IGRAPHICS_CONFG_DIR, relative_location, rel_size, &cur_path_ptr);
+#endif
 
             // Only add the home folders if not NULL
             if (NULL != home_config_dir) {
