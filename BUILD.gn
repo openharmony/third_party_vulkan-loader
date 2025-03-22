@@ -109,8 +109,8 @@ ohos_shared_library("vulkan_loader") {
     "init:libbegetutil",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "vulkan-headers:vulkan_headers",
   ]
-  public_external_deps = [ "vulkan-headers:vulkan_headers" ]
 
   output_name = "vulkan"
   output_extension = "so"
