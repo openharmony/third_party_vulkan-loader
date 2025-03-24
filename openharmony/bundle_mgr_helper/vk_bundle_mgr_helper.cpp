@@ -54,6 +54,21 @@ bool InitBundleInfo(char* debugHapName)
     return false;
 }
 
+bool CheckAppProvisionTypeIsDebug()
+{
+    auto vkBundleMgrHelper = OHOS::DelayedSingleton<OHOS::AppExecFwk::VKBundleMgrHelper>::GetInstance();
+    if (vkBundleMgrHelper == nullptr) {
+        VKHILOGE("vkBundleMgrHelper is null!");
+        return false;
+    }
+    VKHILOGD("this hap is %{public}s, the debug hap appProvisionType is %{public}s",
+            vkBundleMgrHelper->g_bundleInfo.name.c_str(), vkBundleMgrHelper->g_bundleInfo.applicationInfo.appProvisionType.c_str());
+    if (vkBundleMgrHelper->g_bundleInfo.applicationInfo.appProvisionType == "release") {
+        return false;
+    }
+    return true;
+}
+
 char* GetDebugLayerLibPath(const struct loader_instance *inst, VkSystemAllocationScope allocation_sacope)
 {
     auto vkBundleMgrHelper = OHOS::DelayedSingleton<OHOS::AppExecFwk::VKBundleMgrHelper>::GetInstance();
