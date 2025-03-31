@@ -25,7 +25,7 @@ extern "C" {
 
 bool InitBundleInfo(char* debugHapName);
 char* GetDebugLayerLibPath(const struct loader_instance *inst, VkSystemAllocationScope allocation_sacope);
-
+bool CheckAppProvisionTypeIsDebug();
 #ifdef __cplusplus
 }
 namespace OHOS {
