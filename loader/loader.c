@@ -2897,7 +2897,6 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
                 break;
             }
         } else {  // Otherwise, treat it as a directory
-            
             dir_stream = loader_opendir(inst, cur_file);
             if (NULL == dir_stream) {
                 continue;
@@ -2932,7 +2931,6 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
             break;
         }
     }
-
 
 out:
 
@@ -3045,22 +3043,22 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
         if (max_len < sizeof(external_system_json_path)) {
             max_len = sizeof(external_system_json_path);
         }
-        size_t debug_layer_json_path_len = max_len + sizeof(debug_layer_name) + sizeof(json_suffix) +1;        
+        size_t debug_layer_json_path_len = max_len + sizeof(debug_layer_name) + sizeof(json_suffix) + 1;
         debug_layer_json_path = loader_secure_getenv("debug.graphic.vklayer_json_path",inst);
         if (NULL == debug_layer_json_path || '\0' == debug_layer_json_path[0]){
             debug_layer_json_path = loader_instance_heap_calloc(inst,debug_layer_json_path_len,VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
             if(debug_layer_json_path == NULL){
                 vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
                 goto out;
-            }            
+            }
             debug_layer_use_heap = true;
             if (use_system_layer && CheckAppProvisionTypeIsDebug()) {
-                strncpy(debug_layer_json_path,external_system_json_path,debug_layer_json_path_len);     
+                strncpy(debug_layer_json_path, external_system_json_path, debug_layer_json_path_len);
             } else {
-                strncpy(debug_layer_json_path,default_json_path,debug_layer_json_path_len);
+                strncpy(debug_layer_json_path, default_json_path, debug_layer_json_path_len);
             }
-            strncat(debug_layer_json_path,debug_layer_name,debug_layer_json_path_len);
-            strncat(debug_layer_json_path,json_suffix,debug_layer_json_path_len);                    
+            strncat(debug_layer_json_path, debug_layer_name, debug_layer_json_path_len);
+            strncat(debug_layer_json_path, json_suffix, debug_layer_json_path_len);
         }
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "OHOS:: debug_layer_json_path: %s", debug_layer_json_path);
     }
@@ -3367,7 +3365,7 @@ out:
         }
     }
     loader_free_getenv(debug_layer_name, inst);
-    loader_free_getenv(debug_hap_name, inst); 
+    loader_free_getenv(debug_hap_name, inst);
 #else
 #warning read_data_files_in_search_paths unsupported platform
 #endif
@@ -4191,10 +4189,10 @@ loader_platform_dl_handle loader_open_layer_file(const struct loader_instance *i
     char* libPath = prop->lib_name;
     loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_LAYER_BIT, 0, "try to open json libPath: %s", libPath);
     if ((prop->lib_handle = loader_platform_open_library(libPath)) == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Loading layer library open_library  %s is error", libPath);
-        loader_handle_load_library_error(inst, libPath, &prop->lib_status);        
+        loader_handle_load_library_error(inst, libPath, &prop->lib_status);
     } else {
         prop->lib_status = LOADER_LAYER_LIB_SUCCESS_LOADED;
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Loading layer library %s", prop->lib_name);
         return prop->lib_handle;
     }
 
@@ -4207,7 +4205,7 @@ loader_platform_dl_handle loader_open_layer_file(const struct loader_instance *i
     if (NULL != debug_layer_name && '\0' != debug_layer_name[0] && InitBundleInfo(debug_hap_name)) {
         const char lib_prefix[] = "lib";
         const char so_suffix[] = ".so";
-        
+
         size_t totalLen = strlen(debug_layer_name) + strlen(lib_prefix) + strlen(so_suffix) + 1;
         char* layerSoName = loader_instance_heap_calloc(inst, totalLen, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (layerSoName == NULL) {
@@ -4250,10 +4248,10 @@ mallocErr:
 
     loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_LAYER_BIT, 0, "try to open hap libPath: %s", libPath);
     if ((prop->lib_handle = loader_platform_open_library(libPath)) == NULL) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Loading layer library open_library  %s is error", libPath);
-        loader_handle_load_library_error(inst, libPath, &prop->lib_status);        
+        loader_handle_load_library_error(inst, libPath, &prop->lib_status);
     } else {
         prop->lib_status = LOADER_LAYER_LIB_SUCCESS_LOADED;
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Loading hap layer library %s", prop->lib_name);
     }
     if (isDebugLayer) {
         loader_instance_heap_free(inst, debugLayerLibPath);
