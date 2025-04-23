@@ -36,6 +36,7 @@ config("vulkan_internal_config") {
     "-Wno-unused-variable",
     "-fPIC",
   ]
+
   cflags_cc = [ "-std=c++17" ]
   ldflags = [ "-Wl,-Bsymbolic" ]
 
@@ -54,6 +55,46 @@ config("vulkan_loader_config") {
   defines = [ "LOADER_USE_UNSAFE_FILE_SEARCH=1" ]
 }
 
+support_unknown_function_handling = false
+if (defined(ar_path) && ar_path != "" && !is_win &&
+    (current_cpu == "arm64" || current_cpu == "x86_64")) {
+  support_unknown_function_handling = true
+  static_library("asm_offset") {
+    sources = [ "loader/asm_offset.c" ]
+    deps = [ "$vulkan_headers_dir:vulkan_headers" ]
+
+    # Output raw assembly instead of compiled object file. The assembly will be included as a member of the output ar file.
+    cflags = [ "-S" ]
+    configs += [ ":vulkan_internal_config" ]
+    configs += [ ":vulkan_loader_config" ]
+  }
+
+  action("gen_defines") {
+    script = "scripts/parse_asm_values.py"
+    deps = [ ":asm_offset" ]
+
+    inputs = [
+      "$target_out_dir/libasm_offset.a",
+      ar_path,
+    ]
+    if (current_cpu == "arm64") {
+      cpu = "aarch64"
+    } else {
+      cpu = "x86_64"
+    }
+    args = [
+      rebase_path("$target_gen_dir/gen_defines.asm", root_build_dir),
+      rebase_path("$target_out_dir/libasm_offset.a", root_build_dir),
+      "GAS",
+      "Clang",
+      cpu,
+      rebase_path(ar_path, root_build_dir),
+      "libasm_offset.asm_offset.c.o",
+    ]
+    outputs = [ "$target_gen_dir/gen_defines.asm" ]
+  }
+}
+
 ohos_shared_library("vulkan_loader") {
   branch_protector_ret = "pac_ret"
   sources = [
@@ -64,7 +105,9 @@ ohos_shared_library("vulkan_loader") {
     "loader/cJSON.h",
     "loader/debug_utils.c",
     "loader/debug_utils.h",
-    "loader/dev_ext_trampoline.c",
+
+    # Should only be linked when assembler is used
+    # "loader/dev_ext_trampoline.c",
     "loader/extension_manual.c",
     "loader/extension_manual.h",
     "loader/generated/vk_layer_dispatch_table.h",
@@ -77,9 +120,13 @@ ohos_shared_library("vulkan_loader") {
     "loader/loader_common.h",
     "loader/loader_environment.c",
     "loader/loader_environment.h",
+    "loader/loader_json.c",
+    "loader/loader_json.h",
     "loader/log.c",
     "loader/log.h",
-    "loader/phys_dev_ext.c",
+
+    # Should only be linked when assembler is used
+    # "loader/phys_dev_ext.c",
     "loader/settings.c",
     "loader/settings.h",
     "loader/stack_allocation.h",
@@ -88,9 +135,6 @@ ohos_shared_library("vulkan_loader") {
     "loader/unknown_function_handling.c",
     "loader/unknown_function_handling.h",
     "loader/vk_loader_layer.h",
-
-    # TODO(jmadill): Use assembler where available.
-    "loader/unknown_ext_chain.c",
     "loader/vk_loader_platform.h",
     "loader/wsi.c",
     "loader/wsi.h",
@@ -112,12 +156,25 @@ ohos_shared_library("vulkan_loader") {
     "vulkan-headers:vulkan_headers",
   ]
 
+  if (support_unknown_function_handling) {
+    if (current_cpu == "arm64") {
+      sources += [ "loader/unknown_ext_chain_gas_aarch.S" ]
+    } else if (current_cpu == "x86_64") {
+      sources += [ "loader/unknown_ext_chain_gas_x86.S" ]
+    } else {
+      assert(false, "Unexpected CPU $current_cpu")
+    }
+
+    defines += [ "UNKNOWN_FUNCTIONS_SUPPORTED=1" ]
+    deps += [ ":gen_defines" ]
+    include_dirs = [ "$target_gen_dir" ]
+  }
+
   output_name = "vulkan"
   output_extension = "so"
 
   part_name = "vulkan-loader"
   subsystem_name = "thirdparty"
-
   license_file = "//third_party/vulkan-loader/LICENSE.txt"
 }
 ## Build libvulkan.so }}}

@@ -27,6 +27,7 @@
 
 #include "test_environment.h"
 
+#include <fstream>
 #include <mutex>
 
 struct MemoryTrackerSettings {
@@ -103,7 +104,10 @@ class MemoryTracker {
     void free(void* pMemory) {
         if (pMemory == nullptr) return;
         auto elem = allocations.find(pMemory);
-        if (elem == allocations.end()) return;
+        if (elem == allocations.end()) {
+            assert(false && "Should never be freeing memory that wasn't allocated by the MemoryTracker!");
+            return;
+        }
         allocations.erase(elem);
         assert(allocation_count != 0 && "Cant free when there are no valid allocations");
         allocation_count--;
@@ -434,7 +438,8 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailInvalidManifests) {
 
     for (size_t i = 0; i < invalid_jsons.size(); i++) {
         auto file_name = std::string("invalid_implicit_layer_") + std::to_string(i) + ".json";
-        fs::path new_path = env.get_folder(ManifestLocation::implicit_layer).write_manifest(file_name, invalid_jsons[i]);
+        std::filesystem::path new_path =
+            env.get_folder(ManifestLocation::implicit_layer).write_manifest(file_name, invalid_jsons[i]);
         env.platform_shim->add_manifest(ManifestCategory::implicit_layer, new_path);
     }
 
@@ -525,7 +530,7 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("auto")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str()))));
+                .set_path(env.get_shimmed_layer_manifest_path(0)))));
 
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -561,7 +566,7 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
             LoaderSettingsLayerConfiguration{}
                 .set_name(layer_name)
                 .set_control("auto")
-                .set_path(env.get_shimmed_layer_manifest_path(0).str()))));
+                .set_path(env.get_shimmed_layer_manifest_path(0)))));
 
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -608,7 +613,8 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
                            "test_layer.json");
     env.get_test_layer().set_do_spurious_allocations_in_create_instance(true).set_do_spurious_allocations_in_create_device(true);
 
-    env.env_var_vk_icd_filenames.add_to_list((fs::path("totally_made_up") / "path_to_fake" / "jason_file.json").str());
+    env.env_var_vk_icd_filenames.add_to_list("totally_made_up/path_to_fake/jason_file.json");
+    env.env_var_vk_icd_filenames.add_to_list("another\\bonkers\\file_path.json");
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
     while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
@@ -740,14 +746,9 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
                                                              .set_disable_environment("DISABLE_ENV")),
                                "test_layer_" + std::to_string(i) + ".json");
     }
-    std::fstream custom_json_file{COMPLEX_JSON_FILE, std::ios_base::in};
-    ASSERT_TRUE(custom_json_file.is_open());
-    std::stringstream custom_json_file_contents;
-    custom_json_file_contents << custom_json_file.rdbuf();
-
-    fs::path new_path = env.get_folder(ManifestLocation::explicit_layer)
-                            .write_manifest("VK_LAYER_complex_file.json", custom_json_file_contents.str());
-    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, new_path);
+    // Throw in a complex json file to flex the json allocation routines
+    env.write_file_from_source(COMPLEX_JSON_FILE, ManifestCategory::explicit_layer, ManifestLocation::explicit_layer,
+                               "VK_LAYER_complex_file.json");
 
     size_t fail_index = 0;
     VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -870,7 +871,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
     size_t fail_index = 0;
     bool reached_the_end = false;
     uint32_t starting_physical_dev_count = 3;
-    while (!reached_the_end && fail_index <= 100) {
+    while (!reached_the_end && fail_index <= 10000) {
         fail_index++;  // applies to the next loop
         uint32_t physical_dev_count = starting_physical_dev_count;
         VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
