@@ -172,7 +172,7 @@ message will show for each driver that has been ignored.
 This message will look like the following:
 
 ```
-WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
+[Vulkan Loader] WARNING | DRIVER: Driver "intel_icd.x86_64.json" ignored because not selected by env var 'VK_LOADER_DRIVERS_SELECT'
 ```
 
 If no drivers are found with a manifest filename that matches any of the
@@ -190,7 +190,7 @@ will show for each driver that has been forcibly disabled.
 This message will look like the following:
 
 ```
-WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
+[Vulkan Loader] WARNING | DRIVER: Driver "radeon_icd.x86_64.json" ignored because it was disabled by env var 'VK_LOADER_DRIVERS_DISABLE'
 ```
 
 If no drivers are found with a manifest filename that matches any of the
@@ -360,7 +360,7 @@ AppX/MSIX packages.
 If a package is found, the loader will scan the root directory of this installed
 package for JSON manifest files. At this time, the only package that is known is
 Microsoft's
-[OpenCL™ and OpenGL® Compatibility Pack](https://apps.microsoft.com/store/detail/9NQPSL29BFFF?hl=en-us&gl=US).
+[OpenCL™, OpenGL®, and Vulkan® Compatibility Pack](https://apps.microsoft.com/store/detail/9NQPSL29BFFF?hl=en-us&gl=US).
 
 The Vulkan loader will open each enabled manifest file found to obtain the name
 or pathname of a driver's shared library (".DLL") file.
