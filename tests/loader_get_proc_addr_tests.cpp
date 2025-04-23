@@ -213,6 +213,9 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     VkSurfaceKHR surface{};
     ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
 
+    VkSurfaceKHR surface2{};
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface2));
+
     DebugUtilsWrapper log{inst};
     ASSERT_EQ(VK_SUCCESS, CreateDebugUtilsMessenger(log));
     auto phys_dev = inst.GetPhysDev();
@@ -236,25 +239,16 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
         info.surface = surface;
 
         VkSwapchainKHR swapchain{};
-        if (CreateSwapchainKHR) CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
-        ASSERT_FALSE(
-            log.find("vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
-                     "extension enabled?"));
         log.logger.clear();
-        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+        ASSERT_FALSE(dev_funcs.vkDestroySwapchainKHR);
+
         // try to call the vkCreateSwapchainKHR acquired from the instance - this *should* abort due to not enabling the extension
-        if (inst_CreateSwapchainKHR) {
-            ASSERT_DEATH(inst_CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain),
-                         "vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
-                         "extension enabled?");
-        }
+        ASSERT_DEATH(inst_CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain),
+                     "vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
+                     "extension enabled?");
+
         log.logger.clear();
-        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
-
-        VkDeviceGroupPresentModeFlagsKHR modes{};
-        if (GetDeviceGroupSurfacePresentModesKHR) GetDeviceGroupSurfacePresentModesKHR(dev.dev, surface, &modes);
-
-        if (CreateSharedSwapchainsKHR) CreateSharedSwapchainsKHR(dev.dev, 1, &info, nullptr, &swapchain);
+        ASSERT_FALSE(dev_funcs.vkDestroySwapchainKHR);
     }
     driver.physical_devices.at(0).add_extensions({"VK_KHR_swapchain", "VK_KHR_display_swapchain", "VK_EXT_debug_marker"});
     {
@@ -272,31 +266,38 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
         ASSERT_TRUE(inst_CreateSwapchainKHR);
         ASSERT_TRUE(GetDeviceGroupSurfacePresentModesKHR);
         ASSERT_TRUE(CreateSharedSwapchainsKHR);
+        ASSERT_TRUE(dev_funcs.vkDestroySwapchainKHR);
 
         VkSwapchainCreateInfoKHR info{};
         info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         info.surface = surface;
 
         VkSwapchainKHR swapchain{};
-        if (CreateSwapchainKHR) CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
+        CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
         ASSERT_FALSE(
             log.find("vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
                      "extension enabled?"));
         log.logger.clear();
-        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
-        if (inst_CreateSwapchainKHR) inst_CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
+        dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+        inst_CreateSwapchainKHR(dev.dev, &info, nullptr, &swapchain);
         ASSERT_FALSE(
             log.find("vkCreateSwapchainKHR: Driver's function pointer was NULL, returning VK_SUCCESS. Was the VK_KHR_swapchain "
                      "extension enabled?"));
         log.logger.clear();
-        if (dev_funcs.vkDestroySwapchainKHR) dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
+        dev_funcs.vkDestroySwapchainKHR(dev.dev, swapchain, nullptr);
 
         VkDeviceGroupPresentModeFlagsKHR modes{};
-        if (GetDeviceGroupSurfacePresentModesKHR) GetDeviceGroupSurfacePresentModesKHR(dev.dev, surface, &modes);
+        GetDeviceGroupSurfacePresentModesKHR(dev.dev, surface, &modes);
 
-        if (CreateSharedSwapchainsKHR) CreateSharedSwapchainsKHR(dev.dev, 1, &info, nullptr, &swapchain);
+        std::array<VkSwapchainCreateInfoKHR, 2> infos{};
+        infos[0] = info;
+        infos[1].sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        infos[1].surface = surface2;
+
+        ASSERT_EQ(VK_SUCCESS, CreateSharedSwapchainsKHR(dev.dev, 2, infos.data(), nullptr, &swapchain));
     }
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
+    env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface2, nullptr);
 }
 
 // Verify that the various ways to get vkGetDeviceProcAddr return the same value
