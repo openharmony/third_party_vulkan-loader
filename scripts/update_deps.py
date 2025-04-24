@@ -295,7 +295,7 @@ def run_cmake_command(cmake_cmd):
     # NOTE: Because CMake is an exectuable that runs executables
     # stdout/stderr are mixed together. So this combines the outputs
     # and prints them properly in case there is a non-zero exit code.
-    result = subprocess.run(cmake_cmd, 
+    result = subprocess.run(cmake_cmd,
         stdout = subprocess.PIPE,
         stderr = subprocess.STDOUT,
         text = True
@@ -415,8 +415,15 @@ class GoodRepo(object):
         if VERBOSE:
             print('Checking out {n} in {d}'.format(n=self.name, d=self.repo_dir))
 
-        if self._args.do_clean_repo:
+        if os.path.exists(os.path.join(self.repo_dir, '.git')):
+            url_changed = command_output(['git', 'config', '--get', 'remote.origin.url'], self.repo_dir).strip() != self.url
+        else:
+            url_changed = False
+
+        if self._args.do_clean_repo or url_changed:
             if os.path.isdir(self.repo_dir):
+                if VERBOSE:
+                    print('Clearing directory {d}'.format(d=self.repo_dir))
                 shutil.rmtree(self.repo_dir, onerror = on_rm_error)
         if not os.path.exists(os.path.join(self.repo_dir, '.git')):
             self.Clone()
@@ -503,11 +510,14 @@ class GoodRepo(object):
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
         if platform.system() == 'Windows' and self._args.generator != "Ninja":
+            cmake_cmd.append('-A')
             if self._args.arch.lower() == '64' or self._args.arch == 'x64' or self._args.arch == 'win64':
-                cmake_cmd.append('-A')
                 cmake_cmd.append('x64')
+            elif self._args.arch == 'arm64':
+                cmake_cmd.append('arm64')
+            elif self._args.arch == 'arm':
+                cmake_cmd.append('arm')
             else:
-                cmake_cmd.append('-A')
                 cmake_cmd.append('Win32')
 
         # Apply a generator, if one is specified.  This can be used to supply
@@ -620,7 +630,7 @@ def CreateHelper(args, repos, filename):
             if repo.api is not None and repo.api != args.api:
                 continue
             if install_names and repo.name in install_names and repo.on_build_platform:
-                helper_file.write('set({var} "{dir}" CACHE STRING "" FORCE)\n'
+                helper_file.write('set({var} "{dir}" CACHE STRING "")\n'
                                   .format(
                                       var=install_names[repo.name],
                                       dir=escape(repo.install_dir)))
@@ -683,7 +693,7 @@ def main():
     parser.add_argument(
         '--arch',
         dest='arch',
-        choices=['32', '64', 'x86', 'x64', 'win32', 'win64'],
+        choices=['32', '64', 'x86', 'x64', 'win32', 'win64', 'arm', 'arm64'],
         type=str.lower,
         help="Set build files architecture (Visual Studio Generator Only)",
         default='64')
