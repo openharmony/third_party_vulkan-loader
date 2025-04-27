@@ -19,7 +19,7 @@
  * Author: Lenny Komow <lenny@lunarg.com>
  */
 
-#include <vulkan/vulkan_core.h>
+#include "loader.h"
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC optimize(3)  // force gcc to use tail-calls
 #endif

@@ -28,8 +28,6 @@
 
 #pragma once
 
-#include "vk_loader_platform.h"
-
 #if defined(_WIN32)
 #include <malloc.h>
 #elif defined(HAVE_ALLOCA_H)

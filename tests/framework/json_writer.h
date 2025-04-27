@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include <cstdint>
 #include <stack>
 #include <string>
+#include <utility>
 
 // Utility class to simplify the writing of JSON manifest files
 
@@ -79,25 +79,13 @@ struct JsonWriter {
     void AddKeyedString(std::string const& key, std::string const& value) {
         CommaAndNewLine();
         Indent();
-        output += "\"" + key + "\": \"" + escape(value) + "\"";
+        output += "\"" + key + "\": \"" + value + "\"";
     }
     void AddString(std::string const& value) {
         CommaAndNewLine();
         Indent();
-        output += "\"" + escape(value) + "\"";
+        output += "\"" + value + "\"";
     }
-#if defined(WIN32)
-    void AddKeyedString(std::string const& key, std::wstring const& value) {
-        CommaAndNewLine();
-        Indent();
-        output += "\"" + key + "\": \"" + escape(narrow(value)) + "\"";
-    }
-    void AddString(std::wstring const& value) {
-        CommaAndNewLine();
-        Indent();
-        output += "\"" + escape(narrow(value)) + "\"";
-    }
-#endif
 
     void AddKeyedBool(std::string const& key, bool value) {
         CommaAndNewLine();
@@ -109,19 +97,6 @@ struct JsonWriter {
         Indent();
         output += std::string(value ? "true" : "false");
     }
-
-    // Json doesn't allow `\` in strings, it must be escaped. Thus we have to convert '\\' to '\\\\' in strings
-    static std::string escape(std::string const& in_path) {
-        std::string out;
-        for (auto& c : in_path) {
-            if (c == '\\')
-                out += "\\\\";
-            else
-                out += c;
-        }
-        return out;
-    }
-    static std::string escape(std::filesystem::path const& in_path) { return escape(narrow(in_path.native())); }
 
    private:
     void CommaAndNewLine() {

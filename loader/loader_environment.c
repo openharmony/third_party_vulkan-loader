@@ -31,7 +31,6 @@
 #include "allocation.h"
 #include "loader.h"
 #include "log.h"
-#include "stack_allocation.h"
 
 #include <ctype.h>
 #include "param/sys_param.h"
@@ -39,7 +38,7 @@
 // Environment variables
 #if COMMON_UNIX_PLATFORMS
 
-bool is_high_integrity(void) { return geteuid() != getuid() || getegid() != getgid(); }
+bool is_high_integrity() { return geteuid() != getuid() || getegid() != getgid(); }
 
 char *loader_getenv(const char *name, const struct loader_instance *inst) {
     if (NULL == name) return NULL;
@@ -492,7 +491,6 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
                             // Only add it if it doesn't already appear in the layer list
                             if (!loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
                                 if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                                    source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_INSTANCE_LAYERS;
                                     res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                     res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);
@@ -559,7 +557,6 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
 
         // If not a meta-layer, simply add it.
         if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE;
             res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);

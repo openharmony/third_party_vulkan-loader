@@ -27,12 +27,6 @@
 // clang-format off
 #pragma once
 
-#include <stdbool.h>
-#include <vulkan/vulkan.h>
-#include <vulkan/vk_layer.h>
-#include "vk_layer_dispatch_table.h"
-
-
 // Structures defined externally, but used here
 struct loader_instance;
 struct loader_device;
@@ -137,10 +131,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(
     const VkAllocationCallbacks*                pAllocator,
     VkDevice*                                   pDevice);
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceExtensionProperties(
-    const char*                                 pLayerName,
-    uint32_t*                                   pPropertyCount,
-    VkExtensionProperties*                      pProperties);
-VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceExtensionProperties(
     const VkEnumerateInstanceExtensionPropertiesChain* chain,
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
@@ -151,9 +141,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(
     uint32_t*                                   pPropertyCount,
     VkExtensionProperties*                      pProperties);
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(
-    uint32_t*                                   pPropertyCount,
-    VkLayerProperties*                          pProperties);
-VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceLayerProperties(
     const VkEnumerateInstanceLayerPropertiesChain* chain,
     uint32_t*                                   pPropertyCount,
     VkLayerProperties*                          pProperties);
@@ -171,8 +158,6 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
     uint32_t*                                   pPropertyCount,
     VkSparseImageFormatProperties*              pProperties);
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(
-    uint32_t*                                   pApiVersion);
-VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceVersion(
     const VkEnumerateInstanceVersionChain* chain,
     uint32_t*                                   pApiVersion);
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
@@ -481,12 +466,6 @@ struct loader_icd_term_dispatch {
 #ifdef VK_USE_PLATFORM_OHOS
     PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
 #endif // VK_USE_PLATFORM_OHOS
-
-    // ---- VK_NV_cooperative_vector extension commands
-    PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV GetPhysicalDeviceCooperativeVectorPropertiesNV;
-
-    // ---- VK_NV_cooperative_matrix2 extension commands
-    PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 };
 
 struct loader_instance_extension_enables {

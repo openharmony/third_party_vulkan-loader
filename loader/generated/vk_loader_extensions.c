@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "vk_loader_platform.h"
 #include "loader.h"
 #include "vk_loader_extensions.h"
 #include <vulkan/vk_icd.h>
@@ -39,7 +40,7 @@
 VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
     struct loader_device *found_dev;
     // The device going in is a trampoline device
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(dev, &found_dev);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(dev, &found_dev, NULL);
 
     if (icd_term)
         loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
@@ -317,12 +318,6 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     LOOKUP_GIPA(CreateSurfaceOHOS);
 #endif // VK_USE_PLATFORM_OHOS
 
-    // ---- VK_NV_cooperative_vector extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceCooperativeVectorPropertiesNV);
-
-    // ---- VK_NV_cooperative_matrix2 extension commands
-    LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV);
-
 #undef LOOKUP_REQUIRED_GIPA
 #undef LOOKUP_GIPA
 
@@ -529,27 +524,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_dispatch_table(struct loader_dev_d
     table->GetDeviceBufferMemoryRequirements = (PFN_vkGetDeviceBufferMemoryRequirements)gpa(dev, "vkGetDeviceBufferMemoryRequirements");
     table->GetDeviceImageMemoryRequirements = (PFN_vkGetDeviceImageMemoryRequirements)gpa(dev, "vkGetDeviceImageMemoryRequirements");
     table->GetDeviceImageSparseMemoryRequirements = (PFN_vkGetDeviceImageSparseMemoryRequirements)gpa(dev, "vkGetDeviceImageSparseMemoryRequirements");
-
-    // ---- Core Vulkan 1.4 commands
-    table->CmdSetLineStipple = (PFN_vkCmdSetLineStipple)gpa(dev, "vkCmdSetLineStipple");
-    table->MapMemory2 = (PFN_vkMapMemory2)gpa(dev, "vkMapMemory2");
-    table->UnmapMemory2 = (PFN_vkUnmapMemory2)gpa(dev, "vkUnmapMemory2");
-    table->CmdBindIndexBuffer2 = (PFN_vkCmdBindIndexBuffer2)gpa(dev, "vkCmdBindIndexBuffer2");
-    table->GetRenderingAreaGranularity = (PFN_vkGetRenderingAreaGranularity)gpa(dev, "vkGetRenderingAreaGranularity");
-    table->GetDeviceImageSubresourceLayout = (PFN_vkGetDeviceImageSubresourceLayout)gpa(dev, "vkGetDeviceImageSubresourceLayout");
-    table->GetImageSubresourceLayout2 = (PFN_vkGetImageSubresourceLayout2)gpa(dev, "vkGetImageSubresourceLayout2");
-    table->CmdPushDescriptorSet = (PFN_vkCmdPushDescriptorSet)gpa(dev, "vkCmdPushDescriptorSet");
-    table->CmdPushDescriptorSetWithTemplate = (PFN_vkCmdPushDescriptorSetWithTemplate)gpa(dev, "vkCmdPushDescriptorSetWithTemplate");
-    table->CmdSetRenderingAttachmentLocations = (PFN_vkCmdSetRenderingAttachmentLocations)gpa(dev, "vkCmdSetRenderingAttachmentLocations");
-    table->CmdSetRenderingInputAttachmentIndices = (PFN_vkCmdSetRenderingInputAttachmentIndices)gpa(dev, "vkCmdSetRenderingInputAttachmentIndices");
-    table->CmdBindDescriptorSets2 = (PFN_vkCmdBindDescriptorSets2)gpa(dev, "vkCmdBindDescriptorSets2");
-    table->CmdPushConstants2 = (PFN_vkCmdPushConstants2)gpa(dev, "vkCmdPushConstants2");
-    table->CmdPushDescriptorSet2 = (PFN_vkCmdPushDescriptorSet2)gpa(dev, "vkCmdPushDescriptorSet2");
-    table->CmdPushDescriptorSetWithTemplate2 = (PFN_vkCmdPushDescriptorSetWithTemplate2)gpa(dev, "vkCmdPushDescriptorSetWithTemplate2");
-    table->CopyMemoryToImage = (PFN_vkCopyMemoryToImage)gpa(dev, "vkCopyMemoryToImage");
-    table->CopyImageToMemory = (PFN_vkCopyImageToMemory)gpa(dev, "vkCopyImageToMemory");
-    table->CopyImageToImage = (PFN_vkCopyImageToImage)gpa(dev, "vkCopyImageToImage");
-    table->TransitionImageLayout = (PFN_vkTransitionImageLayout)gpa(dev, "vkTransitionImageLayout");
 }
 
 // Init Device function pointer dispatch table with extension commands
@@ -687,10 +661,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_KHR_fragment_shading_rate extension commands
     table->CmdSetFragmentShadingRateKHR = (PFN_vkCmdSetFragmentShadingRateKHR)gdpa(dev, "vkCmdSetFragmentShadingRateKHR");
 
-    // ---- VK_KHR_dynamic_rendering_local_read extension commands
-    table->CmdSetRenderingAttachmentLocationsKHR = (PFN_vkCmdSetRenderingAttachmentLocationsKHR)gdpa(dev, "vkCmdSetRenderingAttachmentLocationsKHR");
-    table->CmdSetRenderingInputAttachmentIndicesKHR = (PFN_vkCmdSetRenderingInputAttachmentIndicesKHR)gdpa(dev, "vkCmdSetRenderingInputAttachmentIndicesKHR");
-
     // ---- VK_KHR_present_wait extension commands
     table->WaitForPresentKHR = (PFN_vkWaitForPresentKHR)gdpa(dev, "vkWaitForPresentKHR");
 
@@ -726,6 +696,8 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)gdpa(dev, "vkCmdPipelineBarrier2KHR");
     table->CmdWriteTimestamp2KHR = (PFN_vkCmdWriteTimestamp2KHR)gdpa(dev, "vkCmdWriteTimestamp2KHR");
     table->QueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)gdpa(dev, "vkQueueSubmit2KHR");
+    table->CmdWriteBufferMarker2AMD = (PFN_vkCmdWriteBufferMarker2AMD)gdpa(dev, "vkCmdWriteBufferMarker2AMD");
+    table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)gdpa(dev, "vkGetQueueCheckpointData2NV");
 
     // ---- VK_KHR_copy_commands2 extension commands
     table->CmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)gdpa(dev, "vkCmdCopyBuffer2KHR");
@@ -748,16 +720,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetRenderingAreaGranularityKHR = (PFN_vkGetRenderingAreaGranularityKHR)gdpa(dev, "vkGetRenderingAreaGranularityKHR");
     table->GetDeviceImageSubresourceLayoutKHR = (PFN_vkGetDeviceImageSubresourceLayoutKHR)gdpa(dev, "vkGetDeviceImageSubresourceLayoutKHR");
     table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gdpa(dev, "vkGetImageSubresourceLayout2KHR");
-
-    // ---- VK_KHR_pipeline_binary extension commands
-    table->CreatePipelineBinariesKHR = (PFN_vkCreatePipelineBinariesKHR)gdpa(dev, "vkCreatePipelineBinariesKHR");
-    table->DestroyPipelineBinaryKHR = (PFN_vkDestroyPipelineBinaryKHR)gdpa(dev, "vkDestroyPipelineBinaryKHR");
-    table->GetPipelineKeyKHR = (PFN_vkGetPipelineKeyKHR)gdpa(dev, "vkGetPipelineKeyKHR");
-    table->GetPipelineBinaryDataKHR = (PFN_vkGetPipelineBinaryDataKHR)gdpa(dev, "vkGetPipelineBinaryDataKHR");
-    table->ReleaseCapturedPipelineDataKHR = (PFN_vkReleaseCapturedPipelineDataKHR)gdpa(dev, "vkReleaseCapturedPipelineDataKHR");
-
-    // ---- VK_KHR_line_rasterization extension commands
-    table->CmdSetLineStippleKHR = (PFN_vkCmdSetLineStippleKHR)gdpa(dev, "vkCmdSetLineStippleKHR");
 
     // ---- VK_KHR_calibrated_timestamps extension commands
     table->GetCalibratedTimestampsKHR = (PFN_vkGetCalibratedTimestampsKHR)gdpa(dev, "vkGetCalibratedTimestampsKHR");
@@ -794,7 +756,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_NVX_image_view_handle extension commands
     table->GetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)gdpa(dev, "vkGetImageViewHandleNVX");
-    table->GetImageViewHandle64NVX = (PFN_vkGetImageViewHandle64NVX)gdpa(dev, "vkGetImageViewHandle64NVX");
     table->GetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)gdpa(dev, "vkGetImageViewAddressNVX");
 
     // ---- VK_AMD_draw_indirect_count extension commands
@@ -912,7 +873,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_AMD_buffer_marker extension commands
     table->CmdWriteBufferMarkerAMD = (PFN_vkCmdWriteBufferMarkerAMD)gdpa(dev, "vkCmdWriteBufferMarkerAMD");
-    table->CmdWriteBufferMarker2AMD = (PFN_vkCmdWriteBufferMarker2AMD)gdpa(dev, "vkCmdWriteBufferMarker2AMD");
 
     // ---- VK_EXT_calibrated_timestamps extension commands
     table->GetCalibratedTimestampsEXT = (PFN_vkGetCalibratedTimestampsEXT)gdpa(dev, "vkGetCalibratedTimestampsEXT");
@@ -929,7 +889,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_NV_device_diagnostic_checkpoints extension commands
     table->CmdSetCheckpointNV = (PFN_vkCmdSetCheckpointNV)gdpa(dev, "vkCmdSetCheckpointNV");
     table->GetQueueCheckpointDataNV = (PFN_vkGetQueueCheckpointDataNV)gdpa(dev, "vkGetQueueCheckpointDataNV");
-    table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)gdpa(dev, "vkGetQueueCheckpointData2NV");
 
     // ---- VK_INTEL_performance_query extension commands
     table->InitializePerformanceApiINTEL = (PFN_vkInitializePerformanceApiINTEL)gdpa(dev, "vkInitializePerformanceApiINTEL");
@@ -1142,6 +1101,7 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetPipelineIndirectDeviceAddressNV = (PFN_vkGetPipelineIndirectDeviceAddressNV)gdpa(dev, "vkGetPipelineIndirectDeviceAddressNV");
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
+    table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)gdpa(dev, "vkCmdSetTessellationDomainOriginEXT");
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)gdpa(dev, "vkCmdSetDepthClampEnableEXT");
     table->CmdSetPolygonModeEXT = (PFN_vkCmdSetPolygonModeEXT)gdpa(dev, "vkCmdSetPolygonModeEXT");
     table->CmdSetRasterizationSamplesEXT = (PFN_vkCmdSetRasterizationSamplesEXT)gdpa(dev, "vkCmdSetRasterizationSamplesEXT");
@@ -1152,7 +1112,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdSetColorBlendEnableEXT = (PFN_vkCmdSetColorBlendEnableEXT)gdpa(dev, "vkCmdSetColorBlendEnableEXT");
     table->CmdSetColorBlendEquationEXT = (PFN_vkCmdSetColorBlendEquationEXT)gdpa(dev, "vkCmdSetColorBlendEquationEXT");
     table->CmdSetColorWriteMaskEXT = (PFN_vkCmdSetColorWriteMaskEXT)gdpa(dev, "vkCmdSetColorWriteMaskEXT");
-    table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)gdpa(dev, "vkCmdSetTessellationDomainOriginEXT");
     table->CmdSetRasterizationStreamEXT = (PFN_vkCmdSetRasterizationStreamEXT)gdpa(dev, "vkCmdSetRasterizationStreamEXT");
     table->CmdSetConservativeRasterizationModeEXT = (PFN_vkCmdSetConservativeRasterizationModeEXT)gdpa(dev, "vkCmdSetConservativeRasterizationModeEXT");
     table->CmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)gdpa(dev, "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
@@ -1184,23 +1143,15 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->BindOpticalFlowSessionImageNV = (PFN_vkBindOpticalFlowSessionImageNV)gdpa(dev, "vkBindOpticalFlowSessionImageNV");
     table->CmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)gdpa(dev, "vkCmdOpticalFlowExecuteNV");
 
-    // ---- VK_AMD_anti_lag extension commands
-    table->AntiLagUpdateAMD = (PFN_vkAntiLagUpdateAMD)gdpa(dev, "vkAntiLagUpdateAMD");
-
     // ---- VK_EXT_shader_object extension commands
     table->CreateShadersEXT = (PFN_vkCreateShadersEXT)gdpa(dev, "vkCreateShadersEXT");
     table->DestroyShaderEXT = (PFN_vkDestroyShaderEXT)gdpa(dev, "vkDestroyShaderEXT");
     table->GetShaderBinaryDataEXT = (PFN_vkGetShaderBinaryDataEXT)gdpa(dev, "vkGetShaderBinaryDataEXT");
     table->CmdBindShadersEXT = (PFN_vkCmdBindShadersEXT)gdpa(dev, "vkCmdBindShadersEXT");
-    table->CmdSetDepthClampRangeEXT = (PFN_vkCmdSetDepthClampRangeEXT)gdpa(dev, "vkCmdSetDepthClampRangeEXT");
 
     // ---- VK_QCOM_tile_properties extension commands
     table->GetFramebufferTilePropertiesQCOM = (PFN_vkGetFramebufferTilePropertiesQCOM)gdpa(dev, "vkGetFramebufferTilePropertiesQCOM");
     table->GetDynamicRenderingTilePropertiesQCOM = (PFN_vkGetDynamicRenderingTilePropertiesQCOM)gdpa(dev, "vkGetDynamicRenderingTilePropertiesQCOM");
-
-    // ---- VK_NV_cooperative_vector extension commands
-    table->ConvertCooperativeVectorMatrixNV = (PFN_vkConvertCooperativeVectorMatrixNV)gdpa(dev, "vkConvertCooperativeVectorMatrixNV");
-    table->CmdConvertCooperativeVectorMatrixNV = (PFN_vkCmdConvertCooperativeVectorMatrixNV)gdpa(dev, "vkCmdConvertCooperativeVectorMatrixNV");
 
     // ---- VK_NV_low_latency2 extension commands
     table->SetLatencySleepModeNV = (PFN_vkSetLatencySleepModeNV)gdpa(dev, "vkSetLatencySleepModeNV");
@@ -1216,33 +1167,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)gdpa(dev, "vkGetScreenBufferPropertiesQNX");
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
-    // ---- VK_NV_cluster_acceleration_structure extension commands
-    table->GetClusterAccelerationStructureBuildSizesNV = (PFN_vkGetClusterAccelerationStructureBuildSizesNV)gdpa(dev, "vkGetClusterAccelerationStructureBuildSizesNV");
-    table->CmdBuildClusterAccelerationStructureIndirectNV = (PFN_vkCmdBuildClusterAccelerationStructureIndirectNV)gdpa(dev, "vkCmdBuildClusterAccelerationStructureIndirectNV");
-
-    // ---- VK_NV_partitioned_acceleration_structure extension commands
-    table->GetPartitionedAccelerationStructuresBuildSizesNV = (PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV)gdpa(dev, "vkGetPartitionedAccelerationStructuresBuildSizesNV");
-    table->CmdBuildPartitionedAccelerationStructuresNV = (PFN_vkCmdBuildPartitionedAccelerationStructuresNV)gdpa(dev, "vkCmdBuildPartitionedAccelerationStructuresNV");
-
-    // ---- VK_EXT_device_generated_commands extension commands
-    table->GetGeneratedCommandsMemoryRequirementsEXT = (PFN_vkGetGeneratedCommandsMemoryRequirementsEXT)gdpa(dev, "vkGetGeneratedCommandsMemoryRequirementsEXT");
-    table->CmdPreprocessGeneratedCommandsEXT = (PFN_vkCmdPreprocessGeneratedCommandsEXT)gdpa(dev, "vkCmdPreprocessGeneratedCommandsEXT");
-    table->CmdExecuteGeneratedCommandsEXT = (PFN_vkCmdExecuteGeneratedCommandsEXT)gdpa(dev, "vkCmdExecuteGeneratedCommandsEXT");
-    table->CreateIndirectCommandsLayoutEXT = (PFN_vkCreateIndirectCommandsLayoutEXT)gdpa(dev, "vkCreateIndirectCommandsLayoutEXT");
-    table->DestroyIndirectCommandsLayoutEXT = (PFN_vkDestroyIndirectCommandsLayoutEXT)gdpa(dev, "vkDestroyIndirectCommandsLayoutEXT");
-    table->CreateIndirectExecutionSetEXT = (PFN_vkCreateIndirectExecutionSetEXT)gdpa(dev, "vkCreateIndirectExecutionSetEXT");
-    table->DestroyIndirectExecutionSetEXT = (PFN_vkDestroyIndirectExecutionSetEXT)gdpa(dev, "vkDestroyIndirectExecutionSetEXT");
-    table->UpdateIndirectExecutionSetPipelineEXT = (PFN_vkUpdateIndirectExecutionSetPipelineEXT)gdpa(dev, "vkUpdateIndirectExecutionSetPipelineEXT");
-    table->UpdateIndirectExecutionSetShaderEXT = (PFN_vkUpdateIndirectExecutionSetShaderEXT)gdpa(dev, "vkUpdateIndirectExecutionSetShaderEXT");
-
-    // ---- VK_EXT_external_memory_metal extension commands
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    table->GetMemoryMetalHandleEXT = (PFN_vkGetMemoryMetalHandleEXT)gdpa(dev, "vkGetMemoryMetalHandleEXT");
-#endif // VK_USE_PLATFORM_METAL_EXT
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    table->GetMemoryMetalHandlePropertiesEXT = (PFN_vkGetMemoryMetalHandlePropertiesEXT)gdpa(dev, "vkGetMemoryMetalHandlePropertiesEXT");
-#endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
@@ -1555,12 +1479,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 #if defined(VK_USE_PLATFORM_OHOS)
     table->CreateSurfaceOHOS = (PFN_vkCreateSurfaceOHOS)gpa(inst, "vkCreateSurfaceOHOS");
 #endif // VK_USE_PLATFORM_OHOS
-
-    // ---- VK_NV_cooperative_vector extension commands
-    table->GetPhysicalDeviceCooperativeVectorPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeVectorPropertiesNV");
-
-    // ---- VK_NV_cooperative_matrix2 extension commands
-    table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
 }
 
 // Functions that required a terminator need to have a separate dispatch table which contains their corresponding
@@ -1600,7 +1518,7 @@ void init_extension_device_proc_terminator_dispatch(struct loader_device *dev) {
        dispatch->CmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT)gpda(dev->icd_device, "vkCmdInsertDebugUtilsLabelEXT");
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     // ---- VK_EXT_full_screen_exclusive extension commands
-    if (dev->driver_extensions.ext_full_screen_exclusive_enabled && (dev->driver_extensions.khr_device_group_enabled || dev->driver_extensions.version_1_1_enabled))
+    if (dev->driver_extensions.ext_full_screen_exclusive_enabled && dev->driver_extensions.khr_device_group_enabled)
        dispatch->GetDeviceGroupSurfacePresentModes2EXT = (PFN_vkGetDeviceGroupSurfacePresentModes2EXT)gpda(dev->icd_device, "vkGetDeviceGroupSurfacePresentModes2EXT");
 #endif // VK_USE_PLATFORM_WIN32_KHR
 }
@@ -2388,84 +2306,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
         return (void *)table->GetDeviceImageSparseMemoryRequirements;
     }
 
-    // ---- Core Vulkan 1.4 commands
-    if (!strcmp(name, "CmdSetLineStipple")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdSetLineStipple;
-    }
-    if (!strcmp(name, "MapMemory2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->MapMemory2;
-    }
-    if (!strcmp(name, "UnmapMemory2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->UnmapMemory2;
-    }
-    if (!strcmp(name, "CmdBindIndexBuffer2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdBindIndexBuffer2;
-    }
-    if (!strcmp(name, "GetRenderingAreaGranularity")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->GetRenderingAreaGranularity;
-    }
-    if (!strcmp(name, "GetDeviceImageSubresourceLayout")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->GetDeviceImageSubresourceLayout;
-    }
-    if (!strcmp(name, "GetImageSubresourceLayout2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->GetImageSubresourceLayout2;
-    }
-    if (!strcmp(name, "CmdPushDescriptorSet")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdPushDescriptorSet;
-    }
-    if (!strcmp(name, "CmdPushDescriptorSetWithTemplate")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdPushDescriptorSetWithTemplate;
-    }
-    if (!strcmp(name, "CmdSetRenderingAttachmentLocations")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdSetRenderingAttachmentLocations;
-    }
-    if (!strcmp(name, "CmdSetRenderingInputAttachmentIndices")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdSetRenderingInputAttachmentIndices;
-    }
-    if (!strcmp(name, "CmdBindDescriptorSets2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdBindDescriptorSets2;
-    }
-    if (!strcmp(name, "CmdPushConstants2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdPushConstants2;
-    }
-    if (!strcmp(name, "CmdPushDescriptorSet2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdPushDescriptorSet2;
-    }
-    if (!strcmp(name, "CmdPushDescriptorSetWithTemplate2")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CmdPushDescriptorSetWithTemplate2;
-    }
-    if (!strcmp(name, "CopyMemoryToImage")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CopyMemoryToImage;
-    }
-    if (!strcmp(name, "CopyImageToMemory")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CopyImageToMemory;
-    }
-    if (!strcmp(name, "CopyImageToImage")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->CopyImageToImage;
-    }
-    if (!strcmp(name, "TransitionImageLayout")) {
-        if (dev->should_ignore_device_commands_from_newer_version && api_version < VK_API_VERSION_1_4) return NULL;
-        return (void *)table->TransitionImageLayout;
-    }
-
     // ---- VK_KHR_swapchain extension commands
     if (!strcmp(name, "CreateSwapchainKHR")) return (void *)table->CreateSwapchainKHR;
     if (!strcmp(name, "DestroySwapchainKHR")) return (void *)table->DestroySwapchainKHR;
@@ -2592,10 +2432,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_KHR_fragment_shading_rate extension commands
     if (!strcmp(name, "CmdSetFragmentShadingRateKHR")) return (void *)table->CmdSetFragmentShadingRateKHR;
 
-    // ---- VK_KHR_dynamic_rendering_local_read extension commands
-    if (!strcmp(name, "CmdSetRenderingAttachmentLocationsKHR")) return (void *)table->CmdSetRenderingAttachmentLocationsKHR;
-    if (!strcmp(name, "CmdSetRenderingInputAttachmentIndicesKHR")) return (void *)table->CmdSetRenderingInputAttachmentIndicesKHR;
-
     // ---- VK_KHR_present_wait extension commands
     if (!strcmp(name, "WaitForPresentKHR")) return (void *)table->WaitForPresentKHR;
 
@@ -2631,6 +2467,8 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdPipelineBarrier2KHR")) return (void *)table->CmdPipelineBarrier2KHR;
     if (!strcmp(name, "CmdWriteTimestamp2KHR")) return (void *)table->CmdWriteTimestamp2KHR;
     if (!strcmp(name, "QueueSubmit2KHR")) return (void *)table->QueueSubmit2KHR;
+    if (!strcmp(name, "CmdWriteBufferMarker2AMD")) return (void *)table->CmdWriteBufferMarker2AMD;
+    if (!strcmp(name, "GetQueueCheckpointData2NV")) return (void *)table->GetQueueCheckpointData2NV;
 
     // ---- VK_KHR_copy_commands2 extension commands
     if (!strcmp(name, "CmdCopyBuffer2KHR")) return (void *)table->CmdCopyBuffer2KHR;
@@ -2653,16 +2491,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetRenderingAreaGranularityKHR")) return (void *)table->GetRenderingAreaGranularityKHR;
     if (!strcmp(name, "GetDeviceImageSubresourceLayoutKHR")) return (void *)table->GetDeviceImageSubresourceLayoutKHR;
     if (!strcmp(name, "GetImageSubresourceLayout2KHR")) return (void *)table->GetImageSubresourceLayout2KHR;
-
-    // ---- VK_KHR_pipeline_binary extension commands
-    if (!strcmp(name, "CreatePipelineBinariesKHR")) return (void *)table->CreatePipelineBinariesKHR;
-    if (!strcmp(name, "DestroyPipelineBinaryKHR")) return (void *)table->DestroyPipelineBinaryKHR;
-    if (!strcmp(name, "GetPipelineKeyKHR")) return (void *)table->GetPipelineKeyKHR;
-    if (!strcmp(name, "GetPipelineBinaryDataKHR")) return (void *)table->GetPipelineBinaryDataKHR;
-    if (!strcmp(name, "ReleaseCapturedPipelineDataKHR")) return (void *)table->ReleaseCapturedPipelineDataKHR;
-
-    // ---- VK_KHR_line_rasterization extension commands
-    if (!strcmp(name, "CmdSetLineStippleKHR")) return (void *)table->CmdSetLineStippleKHR;
 
     // ---- VK_KHR_calibrated_timestamps extension commands
     if (!strcmp(name, "GetCalibratedTimestampsKHR")) return (void *)table->GetCalibratedTimestampsKHR;
@@ -2699,7 +2527,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NVX_image_view_handle extension commands
     if (!strcmp(name, "GetImageViewHandleNVX")) return (void *)table->GetImageViewHandleNVX;
-    if (!strcmp(name, "GetImageViewHandle64NVX")) return (void *)table->GetImageViewHandle64NVX;
     if (!strcmp(name, "GetImageViewAddressNVX")) return (void *)table->GetImageViewAddressNVX;
 
     // ---- VK_AMD_draw_indirect_count extension commands
@@ -2817,7 +2644,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_AMD_buffer_marker extension commands
     if (!strcmp(name, "CmdWriteBufferMarkerAMD")) return (void *)table->CmdWriteBufferMarkerAMD;
-    if (!strcmp(name, "CmdWriteBufferMarker2AMD")) return (void *)table->CmdWriteBufferMarker2AMD;
 
     // ---- VK_EXT_calibrated_timestamps extension commands
     if (!strcmp(name, "GetCalibratedTimestampsEXT")) return (void *)table->GetCalibratedTimestampsEXT;
@@ -2834,7 +2660,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_NV_device_diagnostic_checkpoints extension commands
     if (!strcmp(name, "CmdSetCheckpointNV")) return (void *)table->CmdSetCheckpointNV;
     if (!strcmp(name, "GetQueueCheckpointDataNV")) return (void *)table->GetQueueCheckpointDataNV;
-    if (!strcmp(name, "GetQueueCheckpointData2NV")) return (void *)table->GetQueueCheckpointData2NV;
 
     // ---- VK_INTEL_performance_query extension commands
     if (!strcmp(name, "InitializePerformanceApiINTEL")) return (void *)table->InitializePerformanceApiINTEL;
@@ -3047,6 +2872,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetPipelineIndirectDeviceAddressNV")) return (void *)table->GetPipelineIndirectDeviceAddressNV;
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
+    if (!strcmp(name, "CmdSetTessellationDomainOriginEXT")) return (void *)table->CmdSetTessellationDomainOriginEXT;
     if (!strcmp(name, "CmdSetDepthClampEnableEXT")) return (void *)table->CmdSetDepthClampEnableEXT;
     if (!strcmp(name, "CmdSetPolygonModeEXT")) return (void *)table->CmdSetPolygonModeEXT;
     if (!strcmp(name, "CmdSetRasterizationSamplesEXT")) return (void *)table->CmdSetRasterizationSamplesEXT;
@@ -3057,7 +2883,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdSetColorBlendEnableEXT")) return (void *)table->CmdSetColorBlendEnableEXT;
     if (!strcmp(name, "CmdSetColorBlendEquationEXT")) return (void *)table->CmdSetColorBlendEquationEXT;
     if (!strcmp(name, "CmdSetColorWriteMaskEXT")) return (void *)table->CmdSetColorWriteMaskEXT;
-    if (!strcmp(name, "CmdSetTessellationDomainOriginEXT")) return (void *)table->CmdSetTessellationDomainOriginEXT;
     if (!strcmp(name, "CmdSetRasterizationStreamEXT")) return (void *)table->CmdSetRasterizationStreamEXT;
     if (!strcmp(name, "CmdSetConservativeRasterizationModeEXT")) return (void *)table->CmdSetConservativeRasterizationModeEXT;
     if (!strcmp(name, "CmdSetExtraPrimitiveOverestimationSizeEXT")) return (void *)table->CmdSetExtraPrimitiveOverestimationSizeEXT;
@@ -3089,23 +2914,15 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "BindOpticalFlowSessionImageNV")) return (void *)table->BindOpticalFlowSessionImageNV;
     if (!strcmp(name, "CmdOpticalFlowExecuteNV")) return (void *)table->CmdOpticalFlowExecuteNV;
 
-    // ---- VK_AMD_anti_lag extension commands
-    if (!strcmp(name, "AntiLagUpdateAMD")) return (void *)table->AntiLagUpdateAMD;
-
     // ---- VK_EXT_shader_object extension commands
     if (!strcmp(name, "CreateShadersEXT")) return (void *)table->CreateShadersEXT;
     if (!strcmp(name, "DestroyShaderEXT")) return (void *)table->DestroyShaderEXT;
     if (!strcmp(name, "GetShaderBinaryDataEXT")) return (void *)table->GetShaderBinaryDataEXT;
     if (!strcmp(name, "CmdBindShadersEXT")) return (void *)table->CmdBindShadersEXT;
-    if (!strcmp(name, "CmdSetDepthClampRangeEXT")) return (void *)table->CmdSetDepthClampRangeEXT;
 
     // ---- VK_QCOM_tile_properties extension commands
     if (!strcmp(name, "GetFramebufferTilePropertiesQCOM")) return (void *)table->GetFramebufferTilePropertiesQCOM;
     if (!strcmp(name, "GetDynamicRenderingTilePropertiesQCOM")) return (void *)table->GetDynamicRenderingTilePropertiesQCOM;
-
-    // ---- VK_NV_cooperative_vector extension commands
-    if (!strcmp(name, "ConvertCooperativeVectorMatrixNV")) return (void *)table->ConvertCooperativeVectorMatrixNV;
-    if (!strcmp(name, "CmdConvertCooperativeVectorMatrixNV")) return (void *)table->CmdConvertCooperativeVectorMatrixNV;
 
     // ---- VK_NV_low_latency2 extension commands
     if (!strcmp(name, "SetLatencySleepModeNV")) return (void *)table->SetLatencySleepModeNV;
@@ -3121,33 +2938,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     if (!strcmp(name, "GetScreenBufferPropertiesQNX")) return (void *)table->GetScreenBufferPropertiesQNX;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
-    // ---- VK_NV_cluster_acceleration_structure extension commands
-    if (!strcmp(name, "GetClusterAccelerationStructureBuildSizesNV")) return (void *)table->GetClusterAccelerationStructureBuildSizesNV;
-    if (!strcmp(name, "CmdBuildClusterAccelerationStructureIndirectNV")) return (void *)table->CmdBuildClusterAccelerationStructureIndirectNV;
-
-    // ---- VK_NV_partitioned_acceleration_structure extension commands
-    if (!strcmp(name, "GetPartitionedAccelerationStructuresBuildSizesNV")) return (void *)table->GetPartitionedAccelerationStructuresBuildSizesNV;
-    if (!strcmp(name, "CmdBuildPartitionedAccelerationStructuresNV")) return (void *)table->CmdBuildPartitionedAccelerationStructuresNV;
-
-    // ---- VK_EXT_device_generated_commands extension commands
-    if (!strcmp(name, "GetGeneratedCommandsMemoryRequirementsEXT")) return (void *)table->GetGeneratedCommandsMemoryRequirementsEXT;
-    if (!strcmp(name, "CmdPreprocessGeneratedCommandsEXT")) return (void *)table->CmdPreprocessGeneratedCommandsEXT;
-    if (!strcmp(name, "CmdExecuteGeneratedCommandsEXT")) return (void *)table->CmdExecuteGeneratedCommandsEXT;
-    if (!strcmp(name, "CreateIndirectCommandsLayoutEXT")) return (void *)table->CreateIndirectCommandsLayoutEXT;
-    if (!strcmp(name, "DestroyIndirectCommandsLayoutEXT")) return (void *)table->DestroyIndirectCommandsLayoutEXT;
-    if (!strcmp(name, "CreateIndirectExecutionSetEXT")) return (void *)table->CreateIndirectExecutionSetEXT;
-    if (!strcmp(name, "DestroyIndirectExecutionSetEXT")) return (void *)table->DestroyIndirectExecutionSetEXT;
-    if (!strcmp(name, "UpdateIndirectExecutionSetPipelineEXT")) return (void *)table->UpdateIndirectExecutionSetPipelineEXT;
-    if (!strcmp(name, "UpdateIndirectExecutionSetShaderEXT")) return (void *)table->UpdateIndirectExecutionSetShaderEXT;
-
-    // ---- VK_EXT_external_memory_metal extension commands
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    if (!strcmp(name, "GetMemoryMetalHandleEXT")) return (void *)table->GetMemoryMetalHandleEXT;
-#endif // VK_USE_PLATFORM_METAL_EXT
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    if (!strcmp(name, "GetMemoryMetalHandlePropertiesEXT")) return (void *)table->GetMemoryMetalHandlePropertiesEXT;
-#endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -3466,12 +3256,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 #ifdef VK_USE_PLATFORM_OHOS
     if (!strcmp(name, "CreateSurfaceOHOS")) return (void *)table->CreateSurfaceOHOS;
 #endif // VK_USE_PLATFORM_OHOS
-
-    // ---- VK_NV_cooperative_vector extension commands
-    if (!strcmp(name, "GetPhysicalDeviceCooperativeVectorPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeVectorPropertiesNV;
-
-    // ---- VK_NV_cooperative_matrix2 extension commands
-    if (!strcmp(name, "GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 
     *found_name = false;
     return NULL;
@@ -4497,35 +4281,6 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(
 }
 
 
-// ---- VK_KHR_dynamic_rendering_local_read extension trampoline/terminators
-
-VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(
-    VkCommandBuffer                             commandBuffer,
-    const VkRenderingAttachmentLocationInfo*    pLocationInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdSetRenderingAttachmentLocationsKHR: Invalid commandBuffer "
-                   "[VUID-vkCmdSetRenderingAttachmentLocationsKHR-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
-    VkCommandBuffer                             commandBuffer,
-    const VkRenderingInputAttachmentIndexInfo*  pInputAttachmentIndexInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdSetRenderingInputAttachmentIndicesKHR: Invalid commandBuffer "
-                   "[VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo);
-}
-
-
 // ---- VK_KHR_present_wait extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(
@@ -4708,7 +4463,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
 
 VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(
     VkDevice                                    device,
-    const VkMemoryMapInfo*                      pMemoryMapInfo,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
     void**                                      ppData) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -4722,7 +4477,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(
 
 VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(
     VkDevice                                    device,
-    const VkMemoryUnmapInfo*                    pMemoryUnmapInfo) {
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -4882,6 +4637,36 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->QueueSubmit2KHR(queue, submitCount, pSubmits, fence);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineStageFlags2                       stage,
+    VkBuffer                                    dstBuffer,
+    VkDeviceSize                                dstOffset,
+    uint32_t                                    marker) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdWriteBufferMarker2AMD: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(
+    VkQueue                                     queue,
+    uint32_t*                                   pCheckpointDataCount,
+    VkCheckpointData2NV*                        pCheckpointData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetQueueCheckpointData2NV: Invalid queue "
+                   "[VUID-vkGetQueueCheckpointData2NV-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
 
@@ -5048,7 +4833,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(
 
 VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(
     VkDevice                                    device,
-    const VkRenderingAreaInfo*                  pRenderingAreaInfo,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
     VkExtent2D*                                 pGranularity) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -5062,8 +4847,8 @@ VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(
     VkDevice                                    device,
-    const VkDeviceImageSubresourceInfo*         pInfo,
-    VkSubresourceLayout2*                       pLayout) {
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -5077,8 +4862,8 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(
 VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2*                  pSubresource,
-    VkSubresourceLayout2*                       pLayout) {
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -5087,82 +4872,6 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
-}
-
-
-// ---- VK_KHR_pipeline_binary extension trampoline/terminators
-
-VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(
-    VkDevice                                    device,
-    const VkPipelineBinaryCreateInfoKHR*        pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipelineBinaryHandlesInfoKHR*             pBinaries) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCreatePipelineBinariesKHR: Invalid device "
-                   "[VUID-vkCreatePipelineBinariesKHR-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->CreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries);
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyPipelineBinaryKHR(
-    VkDevice                                    device,
-    VkPipelineBinaryKHR                         pipelineBinary,
-    const VkAllocationCallbacks*                pAllocator) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkDestroyPipelineBinaryKHR: Invalid device "
-                   "[VUID-vkDestroyPipelineBinaryKHR-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL GetPipelineKeyKHR(
-    VkDevice                                    device,
-    const VkPipelineCreateInfoKHR*              pPipelineCreateInfo,
-    VkPipelineBinaryKeyKHR*                     pPipelineKey) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPipelineKeyKHR: Invalid device "
-                   "[VUID-vkGetPipelineKeyKHR-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(
-    VkDevice                                    device,
-    const VkPipelineBinaryDataInfoKHR*          pInfo,
-    VkPipelineBinaryKeyKHR*                     pPipelineBinaryKey,
-    size_t*                                     pPipelineBinaryDataSize,
-    void*                                       pPipelineBinaryData) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPipelineBinaryDataKHR: Invalid device "
-                   "[VUID-vkGetPipelineBinaryDataKHR-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize, pPipelineBinaryData);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(
-    VkDevice                                    device,
-    const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
-    const VkAllocationCallbacks*                pAllocator) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkReleaseCapturedPipelineDataKHR: Invalid device "
-                   "[VUID-vkReleaseCapturedPipelineDataKHR-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->ReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator);
 }
 
 
@@ -5196,23 +4905,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixProp
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixPropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, pProperties);
-}
-
-
-// ---- VK_KHR_line_rasterization extension trampoline/terminators
-
-VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleKHR(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    lineStippleFactor,
-    uint16_t                                    lineStipplePattern) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdSetLineStippleKHR: Invalid commandBuffer "
-                   "[VUID-vkCmdSetLineStippleKHR-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
 
@@ -5269,7 +4961,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsKHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkBindDescriptorSetsInfo*             pBindDescriptorSetsInfo) {
+    const VkBindDescriptorSetsInfoKHR*          pBindDescriptorSetsInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -5282,7 +4974,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkPushConstantsInfo*                  pPushConstantsInfo) {
+    const VkPushConstantsInfoKHR*               pPushConstantsInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -5295,7 +4987,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkPushDescriptorSetInfo*              pPushDescriptorSetInfo) {
+    const VkPushDescriptorSetInfoKHR*           pPushDescriptorSetInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -5308,7 +5000,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkPushDescriptorSetWithTemplateInfo*  pPushDescriptorSetWithTemplateInfo) {
+    const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -5375,8 +5067,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) {
+    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "DebugMarkerSetObjectTagEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -5391,9 +5084,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectTagEXT(
     } else if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->object;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_tag_info.object = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            if (NULL != icd_surface->real_icd_surfaces) {
+                local_tag_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -5434,8 +5126,9 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) {
+    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "DebugMarkerSetObjectNameEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -5450,9 +5143,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_DebugMarkerSetObjectNameEXT(
     } else if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->object;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_name_info.object = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            if (NULL != icd_surface->real_icd_surfaces) {
+                local_name_info.object = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -5693,19 +5385,6 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->GetImageViewHandleNVX(device, pInfo);
-}
-
-VKAPI_ATTR uint64_t VKAPI_CALL GetImageViewHandle64NVX(
-    VkDevice                                    device,
-    const VkImageViewHandleInfoNVX*             pInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetImageViewHandle64NVX: Invalid device "
-                   "[VUID-vkGetImageViewHandle64NVX-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetImageViewHandle64NVX(device, pInfo);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(
@@ -6038,8 +5717,9 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) {
+    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "SetDebugUtilsObjectNameEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -6054,9 +5734,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectNameEXT(
     } else if (pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pNameInfo->objectHandle;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_name_info.objectHandle = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            if (NULL != icd_surface->real_icd_surfaces) {
+                local_name_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -6101,8 +5780,9 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(
 VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) {
+    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
     if (NULL == icd_term || NULL == dev) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0, "SetDebugUtilsObjectTagEXT: Invalid device handle");
         abort(); /* Intentionally fail so user can correct issue. */
@@ -6117,9 +5797,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_SetDebugUtilsObjectTagEXT(
     } else if (pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (NULL != dev && NULL != dev->loader_dispatch.core_dispatch.CreateSwapchainKHR) {
             VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pTagInfo->objectHandle;
-            if (NULL != icd_term->surface_list.list && icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR)
-                && icd_term->surface_list.list[icd_surface->surface_index]) {
-                local_tag_info.objectHandle = (uint64_t)icd_term->surface_list.list[icd_surface->surface_index];
+            if (NULL != icd_surface->real_icd_surfaces) {
+                local_tag_info.objectHandle = (uint64_t)icd_surface->real_icd_surfaces[icd_index];
             }
         }
     // If this is an instance we have to replace it with the proper one for the next call.
@@ -6390,9 +6069,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
 VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(
     VkCommandBuffer                             commandBuffer,
-    VkPipeline                                  executionGraph,
-    VkDeviceAddress                             scratch,
-    VkDeviceSize                                scratchSize) {
+    VkDeviceAddress                             scratch) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -6400,7 +6077,7 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(
                    "[VUID-vkCmdInitializeGraphScratchMemoryAMDX-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->CmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch, scratchSize);
+    disp->CmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -6408,7 +6085,6 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(
     VkCommandBuffer                             commandBuffer,
     VkDeviceAddress                             scratch,
-    VkDeviceSize                                scratchSize,
     const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
@@ -6417,7 +6093,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(
                    "[VUID-vkCmdDispatchGraphAMDX-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->CmdDispatchGraphAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
+    disp->CmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -6425,7 +6101,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(
     VkCommandBuffer                             commandBuffer,
     VkDeviceAddress                             scratch,
-    VkDeviceSize                                scratchSize,
     const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
@@ -6434,7 +6109,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(
                    "[VUID-vkCmdDispatchGraphIndirectAMDX-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->CmdDispatchGraphIndirectAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
+    disp->CmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -6442,7 +6117,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(
     VkCommandBuffer                             commandBuffer,
     VkDeviceAddress                             scratch,
-    VkDeviceSize                                scratchSize,
     VkDeviceAddress                             countInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
@@ -6451,7 +6125,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(
                    "[VUID-vkCmdDispatchGraphIndirectCountAMDX-commandBuffer-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    disp->CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo);
+    disp->CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -6882,22 +6556,6 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(
     disp->CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(
-    VkCommandBuffer                             commandBuffer,
-    VkPipelineStageFlags2                       stage,
-    VkBuffer                                    dstBuffer,
-    VkDeviceSize                                dstOffset,
-    uint32_t                                    marker) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdWriteBufferMarker2AMD: Invalid commandBuffer "
-                   "[VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
-}
-
 
 // ---- VK_EXT_calibrated_timestamps extension trampoline/terminators
 
@@ -7059,20 +6717,6 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->GetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(
-    VkQueue                                     queue,
-    uint32_t*                                   pCheckpointDataCount,
-    VkCheckpointData2NV*                        pCheckpointData) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetQueueCheckpointData2NV: Invalid queue "
-                   "[VUID-vkGetQueueCheckpointData2NV-queue-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
 
@@ -7538,7 +7182,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(
     VkDevice                                    device,
-    const VkCopyMemoryToImageInfo*              pCopyMemoryToImageInfo) {
+    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -7551,7 +7195,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(
     VkDevice                                    device,
-    const VkCopyImageToMemoryInfo*              pCopyImageToMemoryInfo) {
+    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -7564,7 +7208,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(
 
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(
     VkDevice                                    device,
-    const VkCopyImageToImageInfo*               pCopyImageToImageInfo) {
+    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -7578,7 +7222,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(
 VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(
     VkDevice                                    device,
     uint32_t                                    transitionCount,
-    const VkHostImageLayoutTransitionInfo*      pTransitions) {
+    const VkHostImageLayoutTransitionInfoEXT*   pTransitions) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -7592,8 +7236,8 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(
 VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2*                  pSubresource,
-    VkSubresourceLayout2*                       pLayout) {
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -9000,6 +8644,19 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(
 
 // ---- VK_EXT_extended_dynamic_state3 extension trampoline/terminators
 
+VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkTessellationDomainOrigin                  domainOrigin) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetTessellationDomainOriginEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetTessellationDomainOriginEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    depthClampEnable) {
@@ -9135,19 +8792,6 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->CmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
-    VkCommandBuffer                             commandBuffer,
-    VkTessellationDomainOrigin                  domainOrigin) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdSetTessellationDomainOriginEXT: Invalid commandBuffer "
-                   "[VUID-vkCmdSetTessellationDomainOriginEXT-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(
@@ -9541,22 +9185,6 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(
 }
 
 
-// ---- VK_AMD_anti_lag extension trampoline/terminators
-
-VKAPI_ATTR void VKAPI_CALL AntiLagUpdateAMD(
-    VkDevice                                    device,
-    const VkAntiLagDataAMD*                     pData) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkAntiLagUpdateAMD: Invalid device "
-                   "[VUID-vkAntiLagUpdateAMD-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->AntiLagUpdateAMD(device, pData);
-}
-
-
 // ---- VK_EXT_shader_object extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
@@ -9619,20 +9247,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(
     disp->CmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampRangeEXT(
-    VkCommandBuffer                             commandBuffer,
-    VkDepthClampModeEXT                         depthClampMode,
-    const VkDepthClampRangeEXT*                 pDepthClampRange) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdSetDepthClampRangeEXT: Invalid commandBuffer "
-                   "[VUID-vkCmdSetDepthClampRangeEXT-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdSetDepthClampRangeEXT(commandBuffer, depthClampMode, pDepthClampRange);
-}
-
 
 // ---- VK_QCOM_tile_properties extension trampoline/terminators
 
@@ -9663,66 +9277,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->GetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
-}
-
-
-// ---- VK_NV_cooperative_vector extension trampoline/terminators
-
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t*                                   pPropertyCount,
-    VkCooperativeVectorPropertiesNV*            pProperties) {
-    const VkLayerInstanceDispatchTable *disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPhysicalDeviceCooperativeVectorPropertiesNV: Invalid physicalDevice "
-                   "[VUID-vkGetPhysicalDeviceCooperativeVectorPropertiesNV-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp = loader_get_instance_layer_dispatch(physicalDevice);
-    return disp->GetPhysicalDeviceCooperativeVectorPropertiesNV(unwrapped_phys_dev, pPropertyCount, pProperties);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeVectorPropertiesNV(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t*                                   pPropertyCount,
-    VkCooperativeVectorPropertiesNV*            pProperties) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL == icd_term->dispatch.GetPhysicalDeviceCooperativeVectorPropertiesNV) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCooperativeVectorPropertiesNV");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return icd_term->dispatch.GetPhysicalDeviceCooperativeVectorPropertiesNV(phys_dev_term->phys_dev, pPropertyCount, pProperties);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL ConvertCooperativeVectorMatrixNV(
-    VkDevice                                    device,
-    const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkConvertCooperativeVectorMatrixNV: Invalid device "
-                   "[VUID-vkConvertCooperativeVectorMatrixNV-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->ConvertCooperativeVectorMatrixNV(device, pInfo);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdConvertCooperativeVectorMatrixNV(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    infoCount,
-    const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdConvertCooperativeVectorMatrixNV: Invalid commandBuffer "
-                   "[VUID-vkCmdConvertCooperativeVectorMatrixNV-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos);
 }
 
 
@@ -9832,268 +9386,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(
 }
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
-// ---- VK_NV_cluster_acceleration_structure extension trampoline/terminators
-
-VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(
-    VkDevice                                    device,
-    const VkClusterAccelerationStructureInputInfoNV* pInfo,
-    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetClusterAccelerationStructureBuildSizesNV: Invalid device "
-                   "[VUID-vkGetClusterAccelerationStructureBuildSizesNV-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->GetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdBuildClusterAccelerationStructureIndirectNV(
-    VkCommandBuffer                             commandBuffer,
-    const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdBuildClusterAccelerationStructureIndirectNV: Invalid commandBuffer "
-                   "[VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos);
-}
-
-
-// ---- VK_NV_partitioned_acceleration_structure extension trampoline/terminators
-
-VKAPI_ATTR void VKAPI_CALL GetPartitionedAccelerationStructuresBuildSizesNV(
-    VkDevice                                    device,
-    const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
-    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPartitionedAccelerationStructuresBuildSizesNV: Invalid device "
-                   "[VUID-vkGetPartitionedAccelerationStructuresBuildSizesNV-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->GetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdBuildPartitionedAccelerationStructuresNV(
-    VkCommandBuffer                             commandBuffer,
-    const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdBuildPartitionedAccelerationStructuresNV: Invalid commandBuffer "
-                   "[VUID-vkCmdBuildPartitionedAccelerationStructuresNV-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo);
-}
-
-
-// ---- VK_EXT_device_generated_commands extension trampoline/terminators
-
-VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsEXT(
-    VkDevice                                    device,
-    const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetGeneratedCommandsMemoryRequirementsEXT: Invalid device "
-                   "[VUID-vkGetGeneratedCommandsMemoryRequirementsEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->GetGeneratedCommandsMemoryRequirementsEXT(device, pInfo, pMemoryRequirements);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsEXT(
-    VkCommandBuffer                             commandBuffer,
-    const VkGeneratedCommandsInfoEXT*           pGeneratedCommandsInfo,
-    VkCommandBuffer                             stateCommandBuffer) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdPreprocessGeneratedCommandsEXT: Invalid commandBuffer "
-                   "[VUID-vkCmdPreprocessGeneratedCommandsEXT-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdPreprocessGeneratedCommandsEXT(commandBuffer, pGeneratedCommandsInfo, stateCommandBuffer);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsEXT(
-    VkCommandBuffer                             commandBuffer,
-    VkBool32                                    isPreprocessed,
-    const VkGeneratedCommandsInfoEXT*           pGeneratedCommandsInfo) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCmdExecuteGeneratedCommandsEXT: Invalid commandBuffer "
-                   "[VUID-vkCmdExecuteGeneratedCommandsEXT-commandBuffer-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->CmdExecuteGeneratedCommandsEXT(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutEXT(
-    VkDevice                                    device,
-    const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkIndirectCommandsLayoutEXT*                pIndirectCommandsLayout) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCreateIndirectCommandsLayoutEXT: Invalid device "
-                   "[VUID-vkCreateIndirectCommandsLayoutEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->CreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutEXT(
-    VkDevice                                    device,
-    VkIndirectCommandsLayoutEXT                 indirectCommandsLayout,
-    const VkAllocationCallbacks*                pAllocator) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkDestroyIndirectCommandsLayoutEXT: Invalid device "
-                   "[VUID-vkDestroyIndirectCommandsLayoutEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectExecutionSetEXT(
-    VkDevice                                    device,
-    const VkIndirectExecutionSetCreateInfoEXT*  pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkIndirectExecutionSetEXT*                  pIndirectExecutionSet) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkCreateIndirectExecutionSetEXT: Invalid device "
-                   "[VUID-vkCreateIndirectExecutionSetEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->CreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator, pIndirectExecutionSet);
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyIndirectExecutionSetEXT(
-    VkDevice                                    device,
-    VkIndirectExecutionSetEXT                   indirectExecutionSet,
-    const VkAllocationCallbacks*                pAllocator) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkDestroyIndirectExecutionSetEXT: Invalid device "
-                   "[VUID-vkDestroyIndirectExecutionSetEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->DestroyIndirectExecutionSetEXT(device, indirectExecutionSet, pAllocator);
-}
-
-VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetPipelineEXT(
-    VkDevice                                    device,
-    VkIndirectExecutionSetEXT                   indirectExecutionSet,
-    uint32_t                                    executionSetWriteCount,
-    const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkUpdateIndirectExecutionSetPipelineEXT: Invalid device "
-                   "[VUID-vkUpdateIndirectExecutionSetPipelineEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->UpdateIndirectExecutionSetPipelineEXT(device, indirectExecutionSet, executionSetWriteCount, pExecutionSetWrites);
-}
-
-VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(
-    VkDevice                                    device,
-    VkIndirectExecutionSetEXT                   indirectExecutionSet,
-    uint32_t                                    executionSetWriteCount,
-    const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkUpdateIndirectExecutionSetShaderEXT: Invalid device "
-                   "[VUID-vkUpdateIndirectExecutionSetShaderEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp->UpdateIndirectExecutionSetShaderEXT(device, indirectExecutionSet, executionSetWriteCount, pExecutionSetWrites);
-}
-
-
-// ---- VK_NV_cooperative_matrix2 extension trampoline/terminators
-
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t*                                   pPropertyCount,
-    VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
-    const VkLayerInstanceDispatchTable *disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV: Invalid physicalDevice "
-                   "[VUID-vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp = loader_get_instance_layer_dispatch(physicalDevice);
-    return disp->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(unwrapped_phys_dev, pPropertyCount, pProperties);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t*                                   pPropertyCount,
-    VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL == icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(phys_dev_term->phys_dev, pPropertyCount, pProperties);
-}
-
-
-// ---- VK_EXT_external_memory_metal extension trampoline/terminators
-
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandleEXT(
-    VkDevice                                    device,
-    const VkMemoryGetMetalHandleInfoEXT*        pGetMetalHandleInfo,
-    void**                                      pHandle) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetMemoryMetalHandleEXT: Invalid device "
-                   "[VUID-vkGetMemoryMetalHandleEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle);
-}
-
-#endif // VK_USE_PLATFORM_METAL_EXT
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandlePropertiesEXT(
-    VkDevice                                    device,
-    VkExternalMemoryHandleTypeFlagBits          handleType,
-    const void*                                 pHandle,
-    VkMemoryMetalHandlePropertiesEXT*           pMemoryMetalHandleProperties) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetMemoryMetalHandlePropertiesEXT: Invalid device "
-                   "[VUID-vkGetMemoryMetalHandlePropertiesEXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetMemoryMetalHandlePropertiesEXT(device, handleType, pHandle, pMemoryMetalHandleProperties);
-}
-
-#endif // VK_USE_PLATFORM_METAL_EXT
 
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
@@ -10957,16 +10249,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
-    // ---- VK_KHR_dynamic_rendering_local_read extension commands
-    if (!strcmp("vkCmdSetRenderingAttachmentLocationsKHR", name)) {
-        *addr = (void *)CmdSetRenderingAttachmentLocationsKHR;
-        return true;
-    }
-    if (!strcmp("vkCmdSetRenderingInputAttachmentIndicesKHR", name)) {
-        *addr = (void *)CmdSetRenderingInputAttachmentIndicesKHR;
-        return true;
-    }
-
     // ---- VK_KHR_present_wait extension commands
     if (!strcmp("vkWaitForPresentKHR", name)) {
         *addr = (void *)WaitForPresentKHR;
@@ -11072,6 +10354,14 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)QueueSubmit2KHR;
         return true;
     }
+    if (!strcmp("vkCmdWriteBufferMarker2AMD", name)) {
+        *addr = (void *)CmdWriteBufferMarker2AMD;
+        return true;
+    }
+    if (!strcmp("vkGetQueueCheckpointData2NV", name)) {
+        *addr = (void *)GetQueueCheckpointData2NV;
+        return true;
+    }
 
     // ---- VK_KHR_copy_commands2 extension commands
     if (!strcmp("vkCmdCopyBuffer2KHR", name)) {
@@ -11137,37 +10427,9 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
-    // ---- VK_KHR_pipeline_binary extension commands
-    if (!strcmp("vkCreatePipelineBinariesKHR", name)) {
-        *addr = (void *)CreatePipelineBinariesKHR;
-        return true;
-    }
-    if (!strcmp("vkDestroyPipelineBinaryKHR", name)) {
-        *addr = (void *)DestroyPipelineBinaryKHR;
-        return true;
-    }
-    if (!strcmp("vkGetPipelineKeyKHR", name)) {
-        *addr = (void *)GetPipelineKeyKHR;
-        return true;
-    }
-    if (!strcmp("vkGetPipelineBinaryDataKHR", name)) {
-        *addr = (void *)GetPipelineBinaryDataKHR;
-        return true;
-    }
-    if (!strcmp("vkReleaseCapturedPipelineDataKHR", name)) {
-        *addr = (void *)ReleaseCapturedPipelineDataKHR;
-        return true;
-    }
-
     // ---- VK_KHR_cooperative_matrix extension commands
     if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", name)) {
         *addr = (void *)GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
-        return true;
-    }
-
-    // ---- VK_KHR_line_rasterization extension commands
-    if (!strcmp("vkCmdSetLineStippleKHR", name)) {
-        *addr = (void *)CmdSetLineStippleKHR;
         return true;
     }
 
@@ -11280,10 +10542,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_NVX_image_view_handle extension commands
     if (!strcmp("vkGetImageViewHandleNVX", name)) {
         *addr = (void *)GetImageViewHandleNVX;
-        return true;
-    }
-    if (!strcmp("vkGetImageViewHandle64NVX", name)) {
-        *addr = (void *)GetImageViewHandle64NVX;
         return true;
     }
     if (!strcmp("vkGetImageViewAddressNVX", name)) {
@@ -11642,10 +10900,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)CmdWriteBufferMarkerAMD;
         return true;
     }
-    if (!strcmp("vkCmdWriteBufferMarker2AMD", name)) {
-        *addr = (void *)CmdWriteBufferMarker2AMD;
-        return true;
-    }
 
     // ---- VK_EXT_calibrated_timestamps extension commands
     if (!strcmp("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", name)) {
@@ -11688,10 +10942,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetQueueCheckpointDataNV", name)) {
         *addr = (void *)GetQueueCheckpointDataNV;
-        return true;
-    }
-    if (!strcmp("vkGetQueueCheckpointData2NV", name)) {
-        *addr = (void *)GetQueueCheckpointData2NV;
         return true;
     }
 
@@ -12300,6 +11550,10 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
+    if (!strcmp("vkCmdSetTessellationDomainOriginEXT", name)) {
+        *addr = (void *)CmdSetTessellationDomainOriginEXT;
+        return true;
+    }
     if (!strcmp("vkCmdSetDepthClampEnableEXT", name)) {
         *addr = (void *)CmdSetDepthClampEnableEXT;
         return true;
@@ -12338,10 +11592,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdSetColorWriteMaskEXT", name)) {
         *addr = (void *)CmdSetColorWriteMaskEXT;
-        return true;
-    }
-    if (!strcmp("vkCmdSetTessellationDomainOriginEXT", name)) {
-        *addr = (void *)CmdSetTessellationDomainOriginEXT;
         return true;
     }
     if (!strcmp("vkCmdSetRasterizationStreamEXT", name)) {
@@ -12457,12 +11707,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
-    // ---- VK_AMD_anti_lag extension commands
-    if (!strcmp("vkAntiLagUpdateAMD", name)) {
-        *addr = (void *)AntiLagUpdateAMD;
-        return true;
-    }
-
     // ---- VK_EXT_shader_object extension commands
     if (!strcmp("vkCreateShadersEXT", name)) {
         *addr = (void *)CreateShadersEXT;
@@ -12480,10 +11724,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (void *)CmdBindShadersEXT;
         return true;
     }
-    if (!strcmp("vkCmdSetDepthClampRangeEXT", name)) {
-        *addr = (void *)CmdSetDepthClampRangeEXT;
-        return true;
-    }
 
     // ---- VK_QCOM_tile_properties extension commands
     if (!strcmp("vkGetFramebufferTilePropertiesQCOM", name)) {
@@ -12492,20 +11732,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkGetDynamicRenderingTilePropertiesQCOM", name)) {
         *addr = (void *)GetDynamicRenderingTilePropertiesQCOM;
-        return true;
-    }
-
-    // ---- VK_NV_cooperative_vector extension commands
-    if (!strcmp("vkGetPhysicalDeviceCooperativeVectorPropertiesNV", name)) {
-        *addr = (void *)GetPhysicalDeviceCooperativeVectorPropertiesNV;
-        return true;
-    }
-    if (!strcmp("vkConvertCooperativeVectorMatrixNV", name)) {
-        *addr = (void *)ConvertCooperativeVectorMatrixNV;
-        return true;
-    }
-    if (!strcmp("vkCmdConvertCooperativeVectorMatrixNV", name)) {
-        *addr = (void *)CmdConvertCooperativeVectorMatrixNV;
         return true;
     }
 
@@ -12544,84 +11770,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
-    // ---- VK_NV_cluster_acceleration_structure extension commands
-    if (!strcmp("vkGetClusterAccelerationStructureBuildSizesNV", name)) {
-        *addr = (void *)GetClusterAccelerationStructureBuildSizesNV;
-        return true;
-    }
-    if (!strcmp("vkCmdBuildClusterAccelerationStructureIndirectNV", name)) {
-        *addr = (void *)CmdBuildClusterAccelerationStructureIndirectNV;
-        return true;
-    }
-
-    // ---- VK_NV_partitioned_acceleration_structure extension commands
-    if (!strcmp("vkGetPartitionedAccelerationStructuresBuildSizesNV", name)) {
-        *addr = (void *)GetPartitionedAccelerationStructuresBuildSizesNV;
-        return true;
-    }
-    if (!strcmp("vkCmdBuildPartitionedAccelerationStructuresNV", name)) {
-        *addr = (void *)CmdBuildPartitionedAccelerationStructuresNV;
-        return true;
-    }
-
-    // ---- VK_EXT_device_generated_commands extension commands
-    if (!strcmp("vkGetGeneratedCommandsMemoryRequirementsEXT", name)) {
-        *addr = (void *)GetGeneratedCommandsMemoryRequirementsEXT;
-        return true;
-    }
-    if (!strcmp("vkCmdPreprocessGeneratedCommandsEXT", name)) {
-        *addr = (void *)CmdPreprocessGeneratedCommandsEXT;
-        return true;
-    }
-    if (!strcmp("vkCmdExecuteGeneratedCommandsEXT", name)) {
-        *addr = (void *)CmdExecuteGeneratedCommandsEXT;
-        return true;
-    }
-    if (!strcmp("vkCreateIndirectCommandsLayoutEXT", name)) {
-        *addr = (void *)CreateIndirectCommandsLayoutEXT;
-        return true;
-    }
-    if (!strcmp("vkDestroyIndirectCommandsLayoutEXT", name)) {
-        *addr = (void *)DestroyIndirectCommandsLayoutEXT;
-        return true;
-    }
-    if (!strcmp("vkCreateIndirectExecutionSetEXT", name)) {
-        *addr = (void *)CreateIndirectExecutionSetEXT;
-        return true;
-    }
-    if (!strcmp("vkDestroyIndirectExecutionSetEXT", name)) {
-        *addr = (void *)DestroyIndirectExecutionSetEXT;
-        return true;
-    }
-    if (!strcmp("vkUpdateIndirectExecutionSetPipelineEXT", name)) {
-        *addr = (void *)UpdateIndirectExecutionSetPipelineEXT;
-        return true;
-    }
-    if (!strcmp("vkUpdateIndirectExecutionSetShaderEXT", name)) {
-        *addr = (void *)UpdateIndirectExecutionSetShaderEXT;
-        return true;
-    }
-
-    // ---- VK_NV_cooperative_matrix2 extension commands
-    if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV", name)) {
-        *addr = (void *)GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
-        return true;
-    }
-
-    // ---- VK_EXT_external_memory_metal extension commands
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    if (!strcmp("vkGetMemoryMetalHandleEXT", name)) {
-        *addr = (void *)GetMemoryMetalHandleEXT;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_METAL_EXT
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    if (!strcmp("vkGetMemoryMetalHandlePropertiesEXT", name)) {
-        *addr = (void *)GetMemoryMetalHandlePropertiesEXT;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_METAL_EXT
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {
@@ -12901,7 +12049,7 @@ PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *de
     // ---- VK_EXT_full_screen_exclusive extension commands
     if (!strcmp(name, "GetDeviceGroupSurfacePresentModes2EXT")) {
         *found_name = true;
-        return (dev->driver_extensions.ext_full_screen_exclusive_enabled && (dev->driver_extensions.khr_device_group_enabled || dev->driver_extensions.version_1_1_enabled)) ?
+        return dev->driver_extensions.ext_full_screen_exclusive_enabled && dev->driver_extensions.khr_device_group_enabled ?
             (PFN_vkVoidFunction)terminator_GetDeviceGroupSurfacePresentModes2EXT : NULL;
     }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -13164,12 +12312,6 @@ const VkLayerInstanceDispatchTable instance_disp = {
 #if defined(VK_USE_PLATFORM_OHOS)
     .CreateSurfaceOHOS = terminator_CreateSurfaceOHOS,
 #endif // VK_USE_PLATFORM_OHOS
-
-    // ---- VK_NV_cooperative_vector extension commands
-    .GetPhysicalDeviceCooperativeVectorPropertiesNV = terminator_GetPhysicalDeviceCooperativeVectorPropertiesNV,
-
-    // ---- VK_NV_cooperative_matrix2 extension commands
-    .GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = terminator_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV,
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
@@ -13241,7 +12383,6 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME,
                                                   VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME,
                                                   VK_EXT_LAYER_SETTINGS_EXTENSION_NAME,
-                                                  VK_NV_DISPLAY_STEREO_EXTENSION_NAME,
 #if defined(VK_USE_PLATFORM_OHOS)
                                                   VK_OHOS_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_OHOS
