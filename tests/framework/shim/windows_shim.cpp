@@ -31,6 +31,9 @@
 #include <ntstatus.h>
 #endif
 
+#include <windows.h>
+#include <debugapi.h>
+
 #include "shim.h"
 
 #include "detours.h"
@@ -92,9 +95,11 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo *query_info)
 
     reg_info->status = LOADER_QUERY_REGISTRY_STATUS_SUCCESS;
     if (reg_info->output_value_size == 0) {
-        ULONG size = 2;  // final null terminator
-        for (auto const &path : *paths) size = static_cast<ULONG>(path.length() * sizeof(wchar_t));
-        // size in bytes, so multiply path size by two and add 2 for the null terminator
+        // final null terminator size
+        ULONG size = 2;
+
+        // size is in bytes, so multiply path size + 1 (for null terminator) by size of wchar (basically, 2).
+        for (auto const &path : *paths) size += static_cast<ULONG>((path.length() + 1) * sizeof(wchar_t));
         reg_info->output_value_size = size;
         if (size != 2) {
             // only want to write data if there is path data to write
@@ -324,12 +329,13 @@ LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName,
     const auto &location = *location_ptr;
     if (dwIndex >= location.size()) return ERROR_NO_MORE_ITEMS;
 
-    if (*lpcchValueName < location[dwIndex].name.size()) return ERROR_NO_MORE_ITEMS;
-    for (size_t i = 0; i < location[dwIndex].name.size(); i++) {
-        lpValueName[i] = location[dwIndex].name[i];
+    std::string name = narrow(location[dwIndex].name);
+    if (*lpcchValueName < name.size()) return ERROR_NO_MORE_ITEMS;
+    for (size_t i = 0; i < name.size(); i++) {
+        lpValueName[i] = name[i];
     }
-    lpValueName[location[dwIndex].name.size()] = '\0';
-    *lpcchValueName = static_cast<DWORD>(location[dwIndex].name.size() + 1);
+    lpValueName[name.size()] = '\0';
+    *lpcchValueName = static_cast<DWORD>(name.size() + 1);
     if (*lpcbData < sizeof(DWORD)) return ERROR_NO_MORE_ITEMS;
     DWORD *lpcbData_dword = reinterpret_cast<DWORD *>(lpData);
     *lpcbData_dword = location[dwIndex].value;
@@ -343,7 +349,8 @@ LSTATUS __stdcall ShimRegCloseKey(HKEY hKey) {
             return ERROR_SUCCESS;
         }
     }
-    return ERROR_SUCCESS;
+    // means that RegCloseKey was called with an invalid key value (one that doesn't exist or has already been closed)
+    exit(-1);
 }
 
 // Windows app package shims
@@ -401,6 +408,15 @@ LONG WINAPI ShimGetPackagePathByFullName(_In_ PCWSTR packageFullName, _Inout_ UI
     return 0;
 }
 
+using PFN_OutputDebugStringA = void(__stdcall *)(LPCSTR lpOutputString);
+static PFN_OutputDebugStringA fp_OutputDebugStringA = OutputDebugStringA;
+
+void __stdcall intercept_OutputDebugStringA(LPCSTR lpOutputString) {
+    if (lpOutputString != nullptr) {
+        platform_shim.fputs_stderr_log += lpOutputString;
+    }
+}
+
 // Initialization
 void WINAPI DetourFunctions() {
     if (!gdi32_dll) {
@@ -450,6 +466,7 @@ void WINAPI DetourFunctions() {
     DetourAttach(&(PVOID &)fpRegCloseKey, (PVOID)ShimRegCloseKey);
     DetourAttach(&(PVOID &)fpGetPackagesByPackageFamily, (PVOID)ShimGetPackagesByPackageFamily);
     DetourAttach(&(PVOID &)fpGetPackagePathByFullName, (PVOID)ShimGetPackagePathByFullName);
+    DetourAttach(&(PVOID &)fp_OutputDebugStringA, (PVOID)intercept_OutputDebugStringA);
     LONG error = DetourTransactionCommit();
 
     if (error != NO_ERROR) {
@@ -479,6 +496,7 @@ void DetachFunctions() {
     DetourDetach(&(PVOID &)fpRegCloseKey, (PVOID)ShimRegCloseKey);
     DetourDetach(&(PVOID &)fpGetPackagesByPackageFamily, (PVOID)ShimGetPackagesByPackageFamily);
     DetourDetach(&(PVOID &)fpGetPackagePathByFullName, (PVOID)ShimGetPackagePathByFullName);
+    DetourDetach(&(PVOID &)fp_OutputDebugStringA, (PVOID)intercept_OutputDebugStringA);
     DetourTransactionCommit();
 }
 

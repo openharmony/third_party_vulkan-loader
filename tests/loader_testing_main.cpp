@@ -56,16 +56,16 @@ int main(int argc, char** argv) {
 #endif
 
     // clean up folders from old test
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "null_dir");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "icd_manifests");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "icd_env_vars_manifests");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_layer_manifests");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_env_var_layer_folder");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_add_env_var_layer_folder");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "implicit_layer_manifests");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "override_layer_manifests");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "app_package_manifests");
-    fs::delete_folder(fs::path(FRAMEWORK_BUILD_DIRECTORY) / "macos_bundle");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "null_dir");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "icd_manifests");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "icd_env_vars_manifests");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_layer_manifests");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_env_var_layer_folder");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "explicit_add_env_var_layer_folder");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "implicit_layer_manifests");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "override_layer_manifests");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "app_package_manifests");
+    fs::delete_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY) / "macos_bundle");
 
     // make sure the tests don't find these env-vars if they were set on the system
     EnvVarWrapper vk_icd_filenames_env_var{"VK_ICD_FILENAMES"};
@@ -73,6 +73,8 @@ int main(int argc, char** argv) {
     EnvVarWrapper vk_add_driver_files_env_var{"VK_ADD_DRIVER_FILES"};
     EnvVarWrapper vk_layer_path_env_var{"VK_LAYER_PATH"};
     EnvVarWrapper vk_add_layer_path_env_var{"VK_ADD_LAYER_PATH"};
+    EnvVarWrapper vk_implicit_layer_path_env_var{"VK_IMPLICIT_LAYER_PATH"};
+    EnvVarWrapper vk_add_implicit_layer_path_env_var{"VK_ADD_IMPLICIT_LAYER_PATH"};
     EnvVarWrapper vk_instance_layers_env_var{"VK_INSTANCE_LAYERS"};
     EnvVarWrapper vk_loader_drivers_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
     EnvVarWrapper vk_loader_drivers_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
