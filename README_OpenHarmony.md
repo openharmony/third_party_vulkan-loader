@@ -41,7 +41,7 @@ Vulkan-Loader会根据GPU驱动的**json清单文件**中配置的`library_path`
    "file_format_version": "1.0.1",
    "ICD": {
       "library_path": "path to driver library",
-      "api_version": "1.4.309",
+      "api_version": "1.3.275",
       "library_arch" : "64",
       "is_portability_driver": false
    }

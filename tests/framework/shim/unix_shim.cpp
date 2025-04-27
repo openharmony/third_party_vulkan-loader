@@ -35,7 +35,7 @@
 
 PlatformShim platform_shim;
 extern "C" {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__) || defined(__QNX__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 PlatformShim* get_platform_shim(std::vector<fs::FolderManager>* folders) {
     platform_shim = PlatformShim(folders);
     return &platform_shim;
@@ -48,7 +48,7 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #endif
 
 // Necessary for MacOS function shimming
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__) || defined(__QNX__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #define OPENDIR_FUNC_NAME opendir
 #define READDIR_FUNC_NAME readdir
 #define CLOSEDIR_FUNC_NAME closedir
@@ -63,9 +63,6 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #if defined(HAVE___SECURE_GETENV)
 #define __SECURE_GETENV_FUNC_NAME __secure_getenv
 #endif
-#define PRINTF_FUNC_NAME printf
-#define FPUTS_FUNC_NAME fputs
-#define FPUTC_FUNC_NAME fputc
 #elif defined(__APPLE__)
 #define OPENDIR_FUNC_NAME my_opendir
 #define READDIR_FUNC_NAME my_readdir
@@ -83,8 +80,6 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim(std::vector<fs::FolderManager>*
 #define __SECURE_GETENV_FUNC_NAME my__secure_getenv
 #endif
 #endif
-#define FPUTS_FUNC_NAME my_fputs
-#define FPUTC_FUNC_NAME my_fputc
 #endif
 
 using PFN_OPENDIR = DIR* (*)(const char* path_name);
@@ -98,8 +93,6 @@ using PFN_GETEGID = gid_t (*)(void);
 #if defined(HAVE_SECURE_GETENV) || defined(HAVE___SECURE_GETENV)
 using PFN_SEC_GETENV = char* (*)(const char* name);
 #endif
-using PFN_FPUTS = int (*)(const char* str, FILE* stream);
-using PFN_FPUTC = int (*)(int c, FILE* stream);
 
 #if defined(__APPLE__)
 #define real_opendir opendir
@@ -116,8 +109,6 @@ using PFN_FPUTC = int (*)(int c, FILE* stream);
 #if defined(HAVE___SECURE_GETENV)
 #define real__secure_getenv __secure_getenv
 #endif
-#define real_fputs fputs
-#define real_fputc fputc
 #else
 PFN_OPENDIR real_opendir = nullptr;
 PFN_READDIR real_readdir = nullptr;
@@ -133,8 +124,6 @@ PFN_SEC_GETENV real_secure_getenv = nullptr;
 #if defined(HAVE___SECURE_GETENV)
 PFN_SEC_GETENV real__secure_getenv = nullptr;
 #endif
-PFN_FPUTS real_fputs = nullptr;
-PFN_FPUTC real_fputc = nullptr;
 #endif
 
 FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
@@ -146,7 +135,7 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
     }
     DIR* dir;
     if (platform_shim.is_fake_path(path_name)) {
-        auto real_path_name = platform_shim.get_real_path_from_fake_path(std::filesystem::path(path_name));
+        auto real_path_name = platform_shim.get_real_path_from_fake_path(fs::path(path_name));
         dir = real_opendir(real_path_name.c_str());
         platform_shim.dir_entries.push_back(DirEntry{dir, std::string(path_name), {}, 0, true});
     } else if (platform_shim.is_known_path(path_name)) {
@@ -161,15 +150,7 @@ FRAMEWORK_EXPORT DIR* OPENDIR_FUNC_NAME(const char* path_name) {
 
 FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
 #if !defined(__APPLE__)
-    if (!real_readdir) {
-        if (sizeof(void*) == 8) {
-            real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
-        } else {
-            // Necessary to specify the 64 bit readdir version since that is what is linked in when using _FILE_OFFSET_BITS
-            real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir64");
-        }
-    }
-
+    if (!real_readdir) real_readdir = (PFN_READDIR)dlsym(RTLD_NEXT, "readdir");
 #endif
     if (platform_shim.is_during_destruction) {
         return real_readdir(dir_stream);
@@ -185,25 +166,16 @@ FRAMEWORK_EXPORT struct dirent* READDIR_FUNC_NAME(DIR* dir_stream) {
         std::vector<struct dirent*> folder_contents;
         std::vector<std::string> dirent_filenames;
         while (true) {
-            errno = 0;
             struct dirent* dir_entry = real_readdir(dir_stream);
-            if (errno != 0) {
-                std::cerr << "Readdir failed: errno has value of " << std::to_string(errno) << "\n";
-            }
             if (NULL == dir_entry) {
                 break;
-            }
-            // skip . and .. entries
-            if ((dir_entry->d_name[0] == '.' && dir_entry->d_name[1] == '.' && dir_entry->d_name[2] == '\0') ||
-                (dir_entry->d_name[0] == '.' && dir_entry->d_name[1] == '\0')) {
-                continue;
             }
             folder_contents.push_back(dir_entry);
             dirent_filenames.push_back(&dir_entry->d_name[0]);
         }
         auto real_path = it->folder_path;
         if (it->is_fake_path) {
-            real_path = platform_shim.redirection_map.at(it->folder_path);
+            real_path = platform_shim.redirection_map.at(it->folder_path).str();
         }
         auto filenames = get_folder_contents(platform_shim.folders, real_path);
 
@@ -243,13 +215,13 @@ FRAMEWORK_EXPORT int ACCESS_FUNC_NAME(const char* in_pathname, int mode) {
 #if !defined(__APPLE__)
     if (!real_access) real_access = (PFN_ACCESS)dlsym(RTLD_NEXT, "access");
 #endif
-    std::filesystem::path path{in_pathname};
+    fs::path path{in_pathname};
     if (!path.has_parent_path()) {
         return real_access(in_pathname, mode);
     }
 
     if (platform_shim.is_fake_path(path.parent_path())) {
-        std::filesystem::path real_path = platform_shim.get_real_path_from_fake_path(path.parent_path());
+        fs::path real_path = platform_shim.get_real_path_from_fake_path(path.parent_path());
         real_path /= path.filename();
         return real_access(real_path.c_str(), mode);
     }
@@ -260,7 +232,7 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
 #if !defined(__APPLE__)
     if (!real_fopen) real_fopen = (PFN_FOPEN)dlsym(RTLD_NEXT, "fopen");
 #endif
-    std::filesystem::path path{in_filename};
+    fs::path path{in_filename};
     if (!path.has_parent_path()) {
         return real_fopen(in_filename, mode);
     }
@@ -338,27 +310,6 @@ FRAMEWORK_EXPORT char* __SECURE_GETENV_FUNC_NAME(const char* name) {
 }
 #endif
 #endif
-
-FRAMEWORK_EXPORT int FPUTS_FUNC_NAME(const char* str, FILE* stream) {
-#if !defined(__APPLE__)
-    if (!real_fputs) real_fputs = (PFN_FPUTS)dlsym(RTLD_NEXT, "fputs");
-#endif
-    if (stream == stderr) {
-        platform_shim.fputs_stderr_log += str;
-    }
-    return real_fputs(str, stream);
-}
-
-FRAMEWORK_EXPORT int FPUTC_FUNC_NAME(int ch, FILE* stream) {
-#if !defined(__APPLE__)
-    if (!real_fputc) real_fputc = (PFN_FPUTC)dlsym(RTLD_NEXT, "fputc");
-#endif
-    if (stream == stderr) {
-        platform_shim.fputs_stderr_log += ch;
-    }
-    return real_fputc(ch, stream);
-}
-
 #if defined(__APPLE__)
 FRAMEWORK_EXPORT CFBundleRef my_CFBundleGetMainBundle() {
     static CFBundleRef global_bundle{};
@@ -397,7 +348,8 @@ struct Interposer {
 };
 
 __attribute__((used)) static Interposer _interpose_opendir MACOS_ATTRIB = {VOIDP_CAST(my_opendir), VOIDP_CAST(opendir)};
-__attribute__((used)) static Interposer _interpose_readdir MACOS_ATTRIB = {VOIDP_CAST(my_readdir), VOIDP_CAST(readdir)};
+// don't intercept readdir as it crashes when using ASAN with macOS
+// __attribute__((used)) static Interposer _interpose_readdir MACOS_ATTRIB = {VOIDP_CAST(my_readdir), VOIDP_CAST(readdir)};
 __attribute__((used)) static Interposer _interpose_closedir MACOS_ATTRIB = {VOIDP_CAST(my_closedir), VOIDP_CAST(closedir)};
 __attribute__((used)) static Interposer _interpose_access MACOS_ATTRIB = {VOIDP_CAST(my_access), VOIDP_CAST(access)};
 __attribute__((used)) static Interposer _interpose_fopen MACOS_ATTRIB = {VOIDP_CAST(my_fopen), VOIDP_CAST(fopen)};
@@ -414,8 +366,6 @@ __attribute__((used)) static Interposer _interpose__secure_getenv MACOS_ATTRIB =
                                                                                   VOIDP_CAST(__secure_getenv)};
 #endif
 #endif
-__attribute__((used)) static Interposer _interpose_fputs MACOS_ATTRIB = {VOIDP_CAST(my_fputs), VOIDP_CAST(fputs)};
-__attribute__((used)) static Interposer _interpose_fputc MACOS_ATTRIB = {VOIDP_CAST(my_fputc), VOIDP_CAST(fputc)};
 __attribute__((used)) static Interposer _interpose_CFBundleGetMainBundle MACOS_ATTRIB = {VOIDP_CAST(my_CFBundleGetMainBundle),
                                                                                          VOIDP_CAST(CFBundleGetMainBundle)};
 __attribute__((used)) static Interposer _interpose_CFBundleCopyResourcesDirectoryURL MACOS_ATTRIB = {

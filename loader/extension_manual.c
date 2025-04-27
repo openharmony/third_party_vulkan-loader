@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "allocation.h"
+#include "debug_utils.h"
 #include "loader.h"
 #include "log.h"
 #include "wsi.h"
@@ -106,13 +107,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
+    uint8_t icd_index = phys_dev_term->icd_index;
 
     // Unwrap the surface if needed
     VkSurfaceKHR unwrapped_surface = surface;
-    if (NULL != phys_dev_term->this_icd_term->surface_list.list &&
-        phys_dev_term->this_icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
-        phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index]) {
-        unwrapped_surface = phys_dev_term->this_icd_term->surface_list.list[icd_surface->surface_index];
+    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)(icd_surface->real_icd_surfaces[icd_index])) {
+        unwrapped_surface = icd_surface->real_icd_surfaces[icd_index];
     }
 
     if (NULL != icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2EXT) {
@@ -274,18 +274,15 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModes2E
                    "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceSurfacePresentModes2EXT");
         abort();
     }
-    if (VK_NULL_HANDLE != pSurfaceInfo->surface) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
-        if (NULL != icd_surface && NULL != icd_term->surface_list.list &&
-            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
-            icd_term->surface_list.list[icd_surface->surface_index]) {
-            VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
-            surface_info_copy.sType = pSurfaceInfo->sType;
-            surface_info_copy.pNext = pSurfaceInfo->pNext;
-            surface_info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
-            return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, &surface_info_copy,
-                                                                               pPresentModeCount, pPresentModes);
-        }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
+    uint8_t icd_index = phys_dev_term->icd_index;
+    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)icd_surface->real_icd_surfaces[icd_index]) {
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
+        surface_info_copy.sType = pSurfaceInfo->sType;
+        surface_info_copy.pNext = pSurfaceInfo->pNext;
+        surface_info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
+        return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, &surface_info_copy,
+                                                                           pPresentModeCount, pPresentModes);
     }
     return icd_term->dispatch.GetPhysicalDeviceSurfacePresentModes2EXT(phys_dev_term->phys_dev, pSurfaceInfo, pPresentModeCount,
                                                                        pPresentModes);
@@ -307,8 +304,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice de
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                                 const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                                                 VkDeviceGroupPresentModeFlagsKHR *pModes) {
+    uint32_t icd_index = 0;
     struct loader_device *dev;
-    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
     if (NULL == icd_term || NULL == dev ||
         NULL == dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -323,18 +321,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(
                    "[VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    if (VK_NULL_HANDLE != pSurfaceInfo->surface) {
-        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(pSurfaceInfo->surface);
-        if (NULL != icd_surface && NULL != icd_term->surface_list.list &&
-            icd_term->surface_list.capacity > icd_surface->surface_index * sizeof(VkSurfaceKHR) &&
-            icd_term->surface_list.list[icd_surface->surface_index]) {
-            VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
-            surface_info_copy.sType = pSurfaceInfo->sType;
-            surface_info_copy.pNext = pSurfaceInfo->pNext;
-            surface_info_copy.surface = icd_term->surface_list.list[icd_surface->surface_index];
-            return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(
-                device, &surface_info_copy, pModes);
-        }
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)pSurfaceInfo->surface;
+    if (NULL != icd_surface->real_icd_surfaces && NULL != (void *)(uintptr_t)icd_surface->real_icd_surfaces[icd_index]) {
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info_copy;
+        surface_info_copy.sType = pSurfaceInfo->sType;
+        surface_info_copy.pNext = pSurfaceInfo->pNext;
+        surface_info_copy.surface = icd_surface->real_icd_surfaces[icd_index];
+        return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, &surface_info_copy,
+                                                                                                        pModes);
     }
     return dev->loader_dispatch.extension_terminator_dispatch.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
 }
