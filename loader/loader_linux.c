@@ -33,6 +33,7 @@
 #include "loader_environment.h"
 #include "loader.h"
 #include "log.h"
+#include "stack_allocation.h"
 
 // Determine a priority based on device type with the higher value being higher priority.
 uint32_t determine_priority_type_value(VkPhysicalDeviceType type) {
@@ -256,7 +257,6 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
             VkPhysicalDeviceProperties dev_props = {};
 
             sorted_device_info[index].physical_device = icd_devices[icd_idx].physical_devices[phys_dev];
-            sorted_device_info[index].icd_index = icd_idx;
             sorted_device_info[index].icd_term = icd_term;
             sorted_device_info[index].has_pci_bus_info = false;
 
@@ -293,8 +293,8 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
             if (sorted_device_info[index].has_pci_bus_info) {
                 VkPhysicalDevicePCIBusInfoPropertiesEXT pci_props = (VkPhysicalDevicePCIBusInfoPropertiesEXT){
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
-                VkPhysicalDeviceProperties2 dev_props2 = (VkPhysicalDeviceProperties2){
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = (VkBaseInStructure *)&pci_props};
+                VkPhysicalDeviceProperties2 dev_props2 =
+                    (VkPhysicalDeviceProperties2){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &pci_props};
 
                 PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
                 if (app_is_vulkan_1_1 && device_is_1_1_capable) {
@@ -330,7 +330,6 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     // Add all others after (they've already been sorted)
     for (uint32_t dev = 0; dev < phys_dev_count; ++dev) {
         sorted_device_term[dev]->this_icd_term = sorted_device_info[dev].icd_term;
-        sorted_device_term[dev]->icd_index = sorted_device_info[dev].icd_index;
         sorted_device_term[dev]->phys_dev = sorted_device_info[dev].physical_device;
         loader_set_dispatch((void *)sorted_device_term[dev], inst->disp);
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s  %s", dev,
@@ -396,8 +395,8 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
             if (sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info) {
                 VkPhysicalDevicePCIBusInfoPropertiesEXT pci_props = (VkPhysicalDevicePCIBusInfoPropertiesEXT){
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
-                VkPhysicalDeviceProperties2 dev_props2 = (VkPhysicalDeviceProperties2){
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = (VkBaseInStructure *)&pci_props};
+                VkPhysicalDeviceProperties2 dev_props2 =
+                    (VkPhysicalDeviceProperties2){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &pci_props};
 
                 PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
                 if (app_is_vulkan_1_1 && device_is_1_1_capable) {
