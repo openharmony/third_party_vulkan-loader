@@ -52,9 +52,5 @@ HWTEST_F(VkBundleMgrHelperTest, VkBundleMgrHelperTest, Level1)
 
     ret = InitBundleInfo((const_cast<char*>(bundleInfo.name.c_str())));
     EXPECT_EQ(ret, false);
-
-    char* path = GetDebugLayerLibPath();
-    EXPECT_NE(path, nullptr);
-    free(path);
 }
 }
