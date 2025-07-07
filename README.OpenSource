@@ -6,6 +6,7 @@
         "Version Number": "v1.4.309",
         "Owner": "wangxutao5@huawei.com",
         "Upstream URL": "https://github.com/KhronosGroup/Vulkan-Loader.git",
-        "Description": "This project provides the Vulkan ICD desktop loader for Windows, Linux, MacOS, and OpenHarmony."
+        "Description": "This project provides the Vulkan ICD desktop loader for Windows, Linux, MacOS, and OpenHarmony.",
+        "Dependencies": "vulkan-headers"
     }
 ]
