@@ -22,9 +22,7 @@
         "samgr",
         "ipc",
         "hilog",
-        "init"
-      ],
-      "third_party": [
+        "init",
         "vulkan-headers"
       ]
     },

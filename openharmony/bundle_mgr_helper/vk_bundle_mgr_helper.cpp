@@ -62,7 +62,8 @@ bool CheckAppProvisionTypeIsDebug()
         return false;
     }
     VKHILOGD("this hap is %{public}s, the debug hap appProvisionType is %{public}s",
-            vkBundleMgrHelper->g_bundleInfo.name.c_str(), vkBundleMgrHelper->g_bundleInfo.applicationInfo.appProvisionType.c_str());
+        vkBundleMgrHelper->g_bundleInfo.name.c_str(),
+        vkBundleMgrHelper->g_bundleInfo.applicationInfo.appProvisionType.c_str());
     if (vkBundleMgrHelper->g_bundleInfo.applicationInfo.appProvisionType == "release") {
         return false;
     }
