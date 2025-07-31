@@ -3223,7 +3223,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
         if (max_len < sizeof(external_system_json_path)) {
             max_len = sizeof(external_system_json_path);
         }
-        size_t debug_layer_json_path_len = max_len + sizeof(debug_layer_name) + sizeof(json_suffix) + 1;
+        size_t debug_layer_json_path_len = max_len + strlen(debug_layer_name) + sizeof(json_suffix) + 1;
         debug_layer_json_path = loader_secure_getenv("debug.graphic.vklayer_json_path",inst);
         if (NULL == debug_layer_json_path || '\0' == debug_layer_json_path[0]){
             debug_layer_json_path = loader_instance_heap_calloc(inst,debug_layer_json_path_len,VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
