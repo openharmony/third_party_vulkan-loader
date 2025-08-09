@@ -405,6 +405,18 @@ static inline loader_platform_dl_handle loader_platform_open_driver(const char *
 static inline loader_platform_dl_handle loader_platform_open_library(const char *libPath) {
     return dlopen_fuchsia(libPath, LOADER_DLOPEN_MODE, false);
 }
+#elseif defined(VK_USE_PLATFORM_OHOS)
+static inline loader_platform_dl_handle loader_platform_open_library(const char *libPath) {
+    void *handle = NULL;
+    Dl_namespace ns_ps;
+    if (!dlns_get("passthrough", &ns_ps)) {
+        handle = dlopen_ns(&ns_ps, libPath, LOADER_DLOPEN_MODE);
+    }
+    if (!handle) {
+        handle = dlopen(libPath, LOADER_DLOPEN_MODE);
+    }
+    return handle;
+}
 #else
 static inline loader_platform_dl_handle loader_platform_open_library(const char *libPath) {
     return dlopen(libPath, LOADER_DLOPEN_MODE);
