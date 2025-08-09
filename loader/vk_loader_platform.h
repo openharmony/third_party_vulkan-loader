@@ -405,7 +405,7 @@ static inline loader_platform_dl_handle loader_platform_open_driver(const char *
 static inline loader_platform_dl_handle loader_platform_open_library(const char *libPath) {
     return dlopen_fuchsia(libPath, LOADER_DLOPEN_MODE, false);
 }
-#elseif defined(VK_USE_PLATFORM_OHOS)
+#elif defined(VK_USE_PLATFORM_OHOS)
 static inline loader_platform_dl_handle loader_platform_open_library(const char *libPath) {
     void *handle = NULL;
     Dl_namespace ns_ps;
