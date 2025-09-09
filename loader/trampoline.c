@@ -40,6 +40,10 @@
 #include "vk_loader_platform.h"
 #include "wsi.h"
 
+#if defined(VK_USE_PLATFORM_OHOS)
+#include "memory_trace.h"
+#endif
+
 // Trampoline entrypoints are in this file for core Vulkan commands
 
 /* vkGetInstanceProcAddr: Get global level or instance level entrypoint addresses.
@@ -1122,7 +1126,16 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkAllocateMemory(VkDevice device, c
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
-    return disp->AllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+    VkResult res = disp->AllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+#if defined(VK_USE_PLATFORM_OHOS)
+    if (res == VK_SUCCESS) {
+        restrace(RES_GPU_VK, *pMemory, pAllocateInfo->allocationSize, TAG_RES_GPU_VK, true);
+        loader_log(NULL, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            "vkAllocateMemory: restrace pMemory:[%p], alloc size:[%lu]",
+            (void*)*pMemory, (unsigned long)pAllocateInfo->allocationSize);
+    }
+#endif
+    return res;
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkFreeMemory(VkDevice device, VkDeviceMemory mem,
@@ -1135,6 +1148,11 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkFreeMemory(VkDevice device, VkDeviceM
     }
 
     disp->FreeMemory(device, mem, pAllocator);
+#if defined(VK_USE_PLATFORM_OHOS)
+    restrace(RES_GPU_VK, mem, 0, TAG_RES_GPU_VK, false);
+    loader_log(NULL, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+        "vkFreeMemory: restrace pMemory:[%p]", (void*)mem);
+#endif
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset,

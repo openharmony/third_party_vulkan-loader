@@ -97,6 +97,7 @@ if (defined(ar_path) && ar_path != "" && !is_win &&
 
 ohos_shared_library("vulkan_loader") {
   branch_protector_ret = "pac_ret"
+  defines = [ "HOOK_ENABLE" ]
   sources = [
     "loader/adapters.h",
     "loader/allocation.c",
