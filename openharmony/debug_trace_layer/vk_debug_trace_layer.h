@@ -19,6 +19,150 @@
 #include "vk_dispatch_table_helper.h"
 #include "vk_layer_dispatch_table.h"
 
+#ifndef ROSEN_TRACE_DISABLE
+#include "hitrace_meter.h"
+// deprecated:USE RS_TRACE_BEGIN_XXX instead
+#define ROSEN_TRACE_BEGIN(tag, name) StartTrace(tag, name)
+#define RS_TRACE_BEGIN(name) ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
+// deprecated:USE RS_TRACE_END_XXX instead
+#define ROSEN_TRACE_END(tag) FinishTrace(tag)
+#define RS_TRACE_END() ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL)
+#define RS_TRACE_NAME(name) HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
+#define RS_TRACE_NAME_FMT(fmt, ...) \
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
+#define RS_ASYNC_TRACE_BEGIN(name, value) StartAsyncTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name, value)
+#define RS_ASYNC_TRACE_END(name, value) FinishAsyncTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name, value)
+#define RS_TRACE_INT(name, value) CountTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name, value)
+#define RS_TRACE_FUNC() RS_TRACE_NAME(__func__)
+
+// DEBUG level
+#define RS_TRACE_BEGIN_DEBUG(name, customArgs) \
+    StartTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_DEBUG, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_END_DEBUG(name) \
+    FinishTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_DEBUG, HITRACE_TAG_GRAPHIC_AGP)
+#define RS_TRACE_NAME_DEBUG(name, customArgs) \
+    HITRACE_METER_NAME_EX(HiTraceOutputLevel::HITRACE_LEVEL_DEBUG, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_NAME_FMT_DEBUG(customArgs, fmt, ...) \
+    HITRACE_METER_FMT_EX(HiTraceOutputLevel::HITRACE_LEVEL_DEBUG, HITRACE_TAG_GRAPHIC_AGP, \
+    customArgs, fmt, ##__VA_ARGS__)
+#define RS_ASYNC_TRACE_BEGIN_DEBUG(name, value, customCategory, customArgs) \
+    StartAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_DEBUG, HITRACE_TAG_GRAPHIC_AGP, name, value, \
+    customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_DEBUG(name, value) \
+    FinishAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_DEBUG, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_INT_DEBUG(name, value) \
+    CountTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_DEBUG, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_FUNC_DEBUG() RS_TRACE_NAME_DEBUG(__func__, "")
+
+// INFO level
+#define RS_TRACE_BEGIN_INFO(name, customArgs) \
+    StartTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_INFO, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_END_INFO(name) \
+    FinishTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_INFO, HITRACE_TAG_GRAPHIC_AGP)
+#define RS_TRACE_NAME_INFO(name, customArgs) \
+    HITRACE_METER_NAME_EX(HiTraceOutputLevel::HITRACE_LEVEL_INFO, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_NAME_FMT_INFO(customArgs, fmt, ...) \
+    HITRACE_METER_FMT_EX(HiTraceOutputLevel::HITRACE_LEVEL_INFO, HITRACE_TAG_GRAPHIC_AGP, \
+    customArgs, fmt, ##__VA_ARGS__)
+#define RS_ASYNC_TRACE_BEGIN_INFO(name, value, customCategory, customArgs) \
+    StartAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_INFO, HITRACE_TAG_GRAPHIC_AGP, name, value, \
+    customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_INFO(name, value) \
+    FinishAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_INFO, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_INT_INFO(name, value) \
+    CountTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_INFO, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_FUNC_INFO() RS_TRACE_NAME_INFO(__func__, "")
+
+// CRITICAL level
+#define RS_TRACE_BEGIN_CRITICAL(name, customArgs) \
+    StartTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_CRITICAL, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_END_CRITICAL(name) \
+    FinishTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_CRITICAL, HITRACE_TAG_GRAPHIC_AGP)
+#define RS_TRACE_NAME_CRITICAL(name, customArgs) \
+    HITRACE_METER_NAME_EX(HiTraceOutputLevel::HITRACE_LEVEL_CRITICAL, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_NAME_FMT_CRITICAL(customArgs, fmt, ...) \
+    HITRACE_METER_FMT_EX(HiTraceOutputLevel::HITRACE_LEVEL_CRITICAL, HITRACE_TAG_GRAPHIC_AGP, \
+    customArgs, fmt, ##__VA_ARGS__)
+#define RS_ASYNC_TRACE_BEGIN_CRITICAL(name, value, customCategory, customArgs) \
+    StartAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_CRITICAL, HITRACE_TAG_GRAPHIC_AGP, name, value, \
+    customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_CRITICAL(name, value) \
+    FinishAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_CRITICAL, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_INT_CRITICAL(name, value) \
+    CountTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_CRITICAL, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_FUNC_CRITICAL() RS_TRACE_NAME_CRITICAL(__func__, "")
+
+// COMMERCIAL level
+#define RS_TRACE_BEGIN_COMMERCIAL(name, customArgs) \
+    StartTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_END_COMMERCIAL(name) \
+    FinishTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_GRAPHIC_AGP)
+#define RS_TRACE_NAME_COMMERCIAL(name, customArgs) \
+    HITRACE_METER_NAME_EX(HiTraceOutputLevel::HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_GRAPHIC_AGP, name, customArgs)
+#define RS_TRACE_NAME_FMT_COMMERCIAL(customArgs, fmt, ...) \
+    HITRACE_METER_FMT_EX(HiTraceOutputLevel::HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_GRAPHIC_AGP, \
+    customArgs, fmt, ##__VA_ARGS__)
+#define RS_ASYNC_TRACE_BEGIN_COMMERCIAL(name, value, customCategory, customArgs) \
+    StartAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_GRAPHIC_AGP, name, value, \
+    customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_COMMERCIAL(name, value) \
+    FinishAsyncTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_INT_COMMERCIAL(name, value) \
+    CountTraceEx(HiTraceOutputLevel::HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_GRAPHIC_AGP, name, value)
+#define RS_TRACE_FUNC_COMMERCIAL() RS_TRACE_NAME_COMMERCIAL(__func__, "")
+#else
+#define ROSEN_TRACE_BEGIN(tag, name)
+#define RS_TRACE_BEGIN(name)
+#define ROSEN_TRACE_END(tag)
+#define RS_TRACE_END()
+#define RS_TRACE_NAME(name)
+#define RS_TRACE_NAME_FMT(fmt, ...)
+#define RS_ASYNC_TRACE_BEGIN(name, value)
+#define RS_ASYNC_TRACE_END(name, value)
+#define RS_TRACE_INT(name, value)
+#define RS_TRACE_FUNC()
+
+// DEBUG level
+#define RS_TRACE_BEGIN_DEBUG(name, customArgs)
+#define RS_TRACE_END_DEBUG(name)
+#define RS_TRACE_NAME_DEBUG(name, customArgs)
+#define RS_TRACE_NAME_FMT_DEBUG(customArgs, fmt, ...)
+#define RS_ASYNC_TRACE_BEGIN_DEBUG(name, value, customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_DEBUG(name, value)
+#define RS_TRACE_INT_DEBUG(name, value)
+#define RS_TRACE_FUNC_DEBUG()
+
+// INFO level
+#define RS_TRACE_BEGIN_INFO(name, customArgs)
+#define RS_TRACE_END_INFO(name)
+#define RS_TRACE_NAME_INFO(name, customArgs)
+#define RS_TRACE_NAME_FMT_INFO(customArgs, fmt, ...)
+#define RS_ASYNC_TRACE_BEGIN_INFO(name, value, customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_INFO(name, value)
+#define RS_TRACE_INT_INFO(name, value)
+#define RS_TRACE_FUNC_INFO()
+
+// CRITICAL level
+#define RS_TRACE_BEGIN_CRITICAL(name, customArgs)
+#define RS_TRACE_END_CRITICAL(name)
+#define RS_TRACE_NAME_CRITICAL(name, customArgs)
+#define RS_TRACE_NAME_FMT_CRITICAL(customArgs, fmt, ...)
+#define RS_ASYNC_TRACE_BEGIN_CRITICAL(name, value, customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_CRITICAL(name, value)
+#define RS_TRACE_INT_CRITICAL(name, value)
+#define RS_TRACE_FUNC_CRITICAL()
+
+// COMMERCIAL level
+#define RS_TRACE_BEGIN_COMMERCIAL(name, customArgs)
+#define RS_TRACE_END_COMMERCIAL(name)
+#define RS_TRACE_NAME_COMMERCIAL(name, customArgs)
+#define RS_TRACE_NAME_FMT_COMMERCIAL(customArgs, fmt, ...)
+#define RS_ASYNC_TRACE_BEGIN_COMMERCIAL(name, value, customCategory, customArgs)
+#define RS_ASYNC_TRACE_END_COMMERCIAL(name, value)
+#define RS_TRACE_INT_COMMERCIAL(name, value)
+#define RS_TRACE_FUNC_COMMERCIAL()
+#endif
+
 #define DEBUG_LAYER_NAME "VK_LAYER_DEBUG_layer"
 #define VK_LAYER_API_VERSION VK_MAKE_VERSION(1, 0, 0)
 

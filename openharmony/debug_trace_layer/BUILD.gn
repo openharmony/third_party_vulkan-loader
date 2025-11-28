@@ -12,14 +12,14 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 ## Build libvulkan_debug_trace.so {{{
 ohos_shared_library("vulkan_debug_trace_layer") {
   sources = [ "vk_debug_trace_layer.cpp" ]
   include_dirs = [
     "debug_trace_layer",
-    "include",
+    "../../loader",
+    "../../loader/generated"
   ]
   defines = [
     "VK_NO_PROTOTYPES",
@@ -32,13 +32,12 @@ ohos_shared_library("vulkan_debug_trace_layer") {
     "-g3",
   ]
   cflags_cc = [ "-std=c++17" ]
-  deps = [ "$graphic_2d_root/utils:scoped_bytrace" ]
 
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "vulkan-headers:vulkan_headers",
-    "vulkan-loader:vulkan_loader",
+    "hitrace:hitrace_meter",
+    "vulkan-headers:vulkan_headers"
   ]
 
   output_name = "vulkan_debug"
