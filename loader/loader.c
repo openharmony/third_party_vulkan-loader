@@ -7100,8 +7100,44 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(uint32_t *pApiVersion) {
     // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
     // prefers us crashing.
+#if defined (_OHOS_)
+    VkResult res = VK_SUCCESS;
+
+    struct loader_icd_tramp_list icd_tramp_list;
+    memset(&icd_tramp_list, 0, sizeof(icd_tramp_list));
+
+    // Scan/discover all ICD libraries
+    res = loader_icd_scan(NULL, &icd_tramp_list, NULL, NULL);
+    if ((VK_SUCCESS != res && icd_tramp_list.count > 0) || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
+
+    uint32_t instance_version = VK_HEADER_VERSION_COMPLETE;
+    // Iterate through all ICDs and get their supported version
+    for (uint32_t i = 0; i < icd_tramp_list.count; i++) {
+        uint32_t icd_version = VK_API_VERSION_1_0;
+        PFN_vkEnumerateInstanceVersion vk_enumerate_instance_version = 
+             (PFN_vkEnumerateInstanceVersion)icd_tramp_list.scanned_list[i].GetInstanceProcAddr(
+                  NULL, "vkEnumerateInstanceVersion");
+        if (vk_enumerate_instance_version) {
+            vk_enumerate_instance_version(&icd_version);
+        }
+
+        if (icd_version < instance_version) {
+            instance_version = icd_version;
+        }
+    }
+
+    *pApiVersion = instance_version;
+    loader_clear_scanned_icd_list(NULL, &icd_tramp_list);
+
+out:
+    loader_destroy_generic_list(NULL, (struct loader_generic_list *)&icd_tramp_list);
+    return res;
+#else
     *pApiVersion = VK_HEADER_VERSION_COMPLETE;
     return VK_SUCCESS;
+#endif
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain,
