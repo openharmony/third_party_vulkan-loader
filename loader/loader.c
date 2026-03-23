@@ -7100,7 +7100,7 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(uint32_t *pApiVersion) {
     // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
     // prefers us crashing.
-#if defined (_OHOS_)
+#if defined(__OHOS__)
     VkResult res = VK_SUCCESS;
 
     struct loader_icd_tramp_list icd_tramp_list;
