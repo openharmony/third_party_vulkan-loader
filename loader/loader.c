@@ -7112,7 +7112,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(uint32_t *pAp
         goto out;
     }
 
-    uint32_t instance_version = VK_HEADER_VERSION_COMPLETE;
+    uint32_t instance_version = VK_MAKE_API_VERSION(0, 1, 3, 275);
     // Iterate through all ICDs and get their supported version
     for (uint32_t i = 0; i < icd_tramp_list.count; i++) {
         uint32_t icd_version = VK_API_VERSION_1_0;
@@ -7123,7 +7123,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(uint32_t *pAp
             res = vk_enumerate_instance_version(&icd_version);
         }
 
-        if (icd_version < instance_version) {
+        if (icd_version > instance_version) {
             instance_version = icd_version;
         }
     }
