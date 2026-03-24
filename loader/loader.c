@@ -7120,7 +7120,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(uint32_t *pAp
              (PFN_vkEnumerateInstanceVersion)icd_tramp_list.scanned_list[i].GetInstanceProcAddr(
                   NULL, "vkEnumerateInstanceVersion");
         if (vk_enumerate_instance_version) {
-            vk_enumerate_instance_version(&icd_version);
+            res = vk_enumerate_instance_version(&icd_version);
         }
 
         if (icd_version < instance_version) {
