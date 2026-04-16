@@ -18,7 +18,7 @@ import("//build/ohos.gni")
 group("vulkan_loader_test") {
   testonly = true
 
-  public_deps = [ "openharmony/test:test" ]
+  deps = [ "openharmony/test:test" ]
 }
 
 # Vulkan loader build options
