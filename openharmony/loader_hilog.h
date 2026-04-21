@@ -29,10 +29,10 @@
 
 void OpenHarmonyLog(VkFlags log_type, char *log_msg)
 {
-    if (log_type & VULKAN_LOADER_ERROR_BIT) {
-        VKHILOGE("%{public}s", log_msg);
-    } else if (log_type & VULKAN_LOADER_FATAL_ERROR_BIT) {
+    if (log_type & VULKAN_LOADER_FATAL_ERROR_BIT) {
         VKHILOGF("%{public}s", log_msg);
+    } else if (log_type & VULKAN_LOADER_ERROR_BIT) {
+        VKHILOGE("%{public}s", log_msg);
     } else {
         VKHILOGD("%{public}s", log_msg);
     }
