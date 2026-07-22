@@ -15,8 +15,6 @@ import("//build/ohos.gni")
 
 ## Build libvulkan_debug_trace.so {{{
 ohos_shared_library("vulkan_debug_trace_layer") {
-  branch_protector_ret = "pac_ret"
-
   sources = [ "vk_debug_trace_layer.cpp" ]
   include_dirs = [
     "debug_trace_layer",
