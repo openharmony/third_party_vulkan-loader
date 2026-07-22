@@ -7108,7 +7108,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceVersion(uint32_t *pAp
 
     // Scan/discover all ICD libraries
     res = loader_icd_scan(NULL, &icd_tramp_list, NULL, NULL);
-    if ((VK_SUCCESS != res && icd_tramp_list.count > 0) || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+    if (res != VK_SUCCESS) {
         goto out;
     }
 
