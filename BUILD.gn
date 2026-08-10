@@ -158,6 +158,7 @@ ohos_shared_library("vulkan_loader") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
     "vulkan-headers:vulkan_headers",
+    "bounds_checking_function:libsec_shared"
   ]
 
   if (support_unknown_function_handling) {

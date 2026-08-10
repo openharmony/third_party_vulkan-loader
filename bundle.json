@@ -23,7 +23,8 @@
         "ipc",
         "hilog",
         "init",
-        "vulkan-headers"
+        "vulkan-headers",
+        "bounds_checking_function"
       ]
     },
     "build": {
