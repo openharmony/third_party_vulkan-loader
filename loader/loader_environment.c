@@ -45,13 +45,28 @@ char *loader_getenv(const char *name, const struct loader_instance *inst) {
     if (NULL == name) return NULL;
 #if defined(__OHOS__)
     CachedHandle g_Handle = CachedParameterCreate(name, "");
+    if (g_Handle == NULL) {
+        return NULL;
+    }
     int changed = 0;
     const char *res = CachedParameterGetChanged(g_Handle, &changed);
     loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_INFO_BIT, 0, "loader_getenv name:%s, res:%s", name, res);
     if (res == NULL || res[0] == '\0') {
+        CachedParameterDestroy(g_Handle);
         return NULL;
     }
-    return (char *)res;
+    // Copy the value to heap-allocated memory, since the handle owns the
+    // original buffer. The caller is responsible for freeing the copy via
+    // loader_free_getenv.
+    size_t len = strlen(res) + 1;
+    char *result = (char *)loader_instance_heap_alloc(inst, len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (result == NULL) {
+        CachedParameterDestroy(g_Handle);
+        return NULL;
+    }
+    memcpy(result, res, len);
+    CachedParameterDestroy(g_Handle);
+    return result;
 #else
     // No allocation of memory necessary for Linux, but we should at least touch
     // the inst pointer to get rid of compiler warnings.
@@ -92,10 +107,15 @@ char *loader_secure_getenv(const char *name, const struct loader_instance *inst)
 }
 
 void loader_free_getenv(char *val, const struct loader_instance *inst) {
+#if defined(__OHOS__)
+    // On OHOS, loader_getenv returns a heap-allocated copy that must be freed.
+    loader_instance_heap_free(inst, (void *)val);
+#else
     // No freeing of memory necessary for Linux, but we should at least touch
     // the val and inst pointers to get rid of compiler warnings.
     (void)val;
     (void)inst;
+#endif
 }
 
 #elif defined(WIN32)

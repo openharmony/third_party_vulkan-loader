@@ -3537,7 +3537,6 @@ out:
     loader_free_getenv(xdg_config_dirs, inst);
     loader_free_getenv(xdg_data_home, inst);
     loader_free_getenv(xdg_data_dirs, inst);
-    loader_free_getenv(xdg_data_home, inst);
     loader_free_getenv(home, inst);
     loader_instance_heap_free(inst, default_data_home);
     loader_instance_heap_free(inst, default_config_home);
